@@ -1,12 +1,14 @@
 /**
- * Pre-Investment Checklist Application Logic
- * Supports Multi-asset Profiles, Autosave, Dynamic Asset Filtering, Markdown Export, PDF Print
+ * ============================================================================
+ * PRE-INVESTMENT CHECKLIST — JAVASCRIPT CONTROLLER
+ * Ultra-Responsive UI, Real-time Score Ring, Multi-Asset Profiles, Export & UX
+ * ============================================================================
  */
 
 (function () {
   'use strict';
 
-  // Constants
+  // Storage Keys
   const STORAGE_KEY_PREFIX = 'investor_checklist_';
   const PROFILES_LIST_KEY = 'investor_checklist_profiles';
   const THEME_KEY = 'investor_checklist_theme';
@@ -17,7 +19,7 @@
   let activeAssetType = 'all'; // 'all' | 'stock' | 'etf'
   let isUpdatingUI = false;
 
-  // DOM Elements
+  // DOM Cache
   const elements = {
     // Theme
     html: document.documentElement,
@@ -26,12 +28,14 @@
     // Asset Meta
     assetTicker: document.getElementById('assetTicker'),
     targetAllocation: document.getElementById('targetAllocation'),
-    segmentBtns: document.querySelectorAll('.segment-btn'),
+    typeTabs: document.querySelectorAll('.type-tab-btn'),
+    presetChips: document.querySelectorAll('.chip-btn'),
     footerTickerBadge: document.getElementById('footerTickerBadge'),
     
     // Scores & Progress
     scorePercent: document.getElementById('scorePercent'),
     scoreProgressRing: document.getElementById('scoreProgressRing'),
+    scoreLinearBar: document.getElementById('scoreLinearBar'),
     scoreCountPassed: document.getElementById('scoreCountPassed'),
     scoreStatusBadge: document.getElementById('scoreStatusBadge'),
     scoreStatusText: document.getElementById('scoreStatusText'),
@@ -46,24 +50,26 @@
     activeProfileLabel: document.getElementById('activeProfileLabel'),
     btnNewChecklist: document.getElementById('btnNewChecklist'),
     
-    // Actions
+    // Action Tools
     btnExportMarkdown: document.getElementById('btnExportMarkdown'),
     btnPrint: document.getElementById('btnPrint'),
     btnReset: document.getElementById('btnReset'),
     btnCopySummary: document.getElementById('btnCopySummary'),
     btnQuickTop: document.getElementById('btnQuickTop'),
+    btnCheckAllList: document.querySelectorAll('.btn-check-all'),
+    stripPills: document.querySelectorAll('.strip-pill'),
     
     // Toast
     toast: document.getElementById('toast'),
     toastMessage: document.getElementById('toastMessage'),
 
-    // Checkboxes & Inputs
+    // Task Elements
     taskCheckboxes: document.querySelectorAll('.task-checkbox'),
     thesisInputs: document.querySelectorAll('.thesis-input')
   };
 
   // =========================================================================
-  // INITIALIZATION
+  // 1. APP INITIALIZATION
   // =========================================================================
 
   function init() {
@@ -71,13 +77,14 @@
     initProfiles();
     loadProfile(currentProfileId);
     bindEvents();
+    initScrollSpy();
     if (window.lucide) {
       window.lucide.createIcons();
     }
   }
 
   // =========================================================================
-  // THEME MANAGEMENT
+  // 2. THEME CONTROLLER (Dark / Light)
   // =========================================================================
 
   function initTheme() {
@@ -99,7 +106,7 @@
   }
 
   // =========================================================================
-  // PROFILE MANAGEMENT (Save / Switch Checklists for Different Tickers)
+  // 3. PROFILE / MULTI-TICKER CONTROLLER
   // =========================================================================
 
   function getProfiles() {
@@ -167,22 +174,21 @@
     localStorage.setItem(ACTIVE_PROFILE_KEY, profileId);
     loadProfile(profileId);
     renderProfilesMenu();
-    showToast(`สลับไปยัง ${elements.activeProfileLabel.textContent}`);
+    showToast(`สลับไปยัง: ${elements.activeProfileLabel.textContent}`);
   }
 
   function createNewProfile() {
-    const ticker = prompt('กรุณาระบุชื่อ Ticker หรือชื่อ Checklist เช่น TSLA, VOO, CPALL:') || '';
+    const ticker = prompt('กรุณาระบุชื่อ Ticker หรือชื่อ Checklist (เช่น NVDA, VOO, CPALL):') || '';
     const newId = 'profile_' + Date.now();
     const profiles = getProfiles();
     const newProfile = {
       id: newId,
-      name: ticker ? `Checklist ${ticker}` : `Checklist ใหม่ ${profiles.length + 1}`,
+      name: ticker ? `Checklist ${ticker.toUpperCase()}` : `Checklist ใหม่ ${profiles.length + 1}`,
       ticker: ticker.toUpperCase()
     };
     profiles.push(newProfile);
     saveProfilesList(profiles);
     
-    // Switch to new
     switchProfile(newId);
     if (ticker) {
       elements.assetTicker.value = ticker.toUpperCase();
@@ -192,7 +198,7 @@
   }
 
   function deleteProfile(profileId) {
-    if (!confirm('คุณแน่ใจว่าต้องการลบ Checklist นี้หรือไม่? ข้อมูลจะไม่สามารถกู้คืนได้')) {
+    if (!confirm('ต้องการลบ Checklist นี้หรือไม่? ข้อมูลจะไม่สามารถกู้คืนได้')) {
       return;
     }
     let profiles = getProfiles();
@@ -203,7 +209,7 @@
   }
 
   // =========================================================================
-  // STATE PERSISTENCE & LOADING
+  // 4. DATA PERSISTENCE & AUTOSAVE
   // =========================================================================
 
   function saveCurrentState() {
@@ -228,7 +234,7 @@
 
     localStorage.setItem(STORAGE_KEY_PREFIX + currentProfileId, JSON.stringify(data));
 
-    // Update profile ticker metadata
+    // Sync profile metadata
     const profiles = getProfiles();
     const current = profiles.find(p => p.id === currentProfileId);
     if (current && current.ticker !== data.ticker) {
@@ -252,22 +258,19 @@
       try {
         data = JSON.parse(raw);
       } catch (e) {
-        console.error('Error parsing stored checklist data', e);
+        console.error('Error parsing checklist data', e);
       }
     }
 
-    // Reset Form
     elements.assetTicker.value = data?.ticker || '';
     elements.targetAllocation.value = data?.targetAllocation || '';
     setAssetTypeFilter(data?.assetType || 'all', false);
 
-    // Populate Checkboxes
     elements.taskCheckboxes.forEach(cb => {
       const id = cb.dataset.id;
       cb.checked = data?.checkboxes?.[id] === true;
     });
 
-    // Populate Thesis Inputs
     elements.thesisInputs.forEach(input => {
       input.value = data?.thesisInputs?.[input.id] || '';
     });
@@ -277,7 +280,7 @@
   }
 
   function resetChecklist() {
-    if (!confirm('ต้องการล้างข้อมูลใน Checklist นี้ทั้งหมดหรือไม่?')) return;
+    if (!confirm('คุณแน่ใจว่าต้องการล้างข้อมูลทั้งหมดใน Checklist นี้หรือไม่?')) return;
     
     isUpdatingUI = true;
     elements.taskCheckboxes.forEach(cb => cb.checked = false);
@@ -290,18 +293,16 @@
   }
 
   // =========================================================================
-  // ASSET TYPE FILTERING ('all' | 'stock' | 'etf')
+  // 5. ASSET TYPE FILTERING ('all' | 'stock' | 'etf')
   // =========================================================================
 
   function setAssetTypeFilter(type, shouldSave = true) {
     activeAssetType = type;
     
-    // Update button styling
-    elements.segmentBtns.forEach(btn => {
+    elements.typeTabs.forEach(btn => {
       btn.classList.toggle('active', btn.dataset.type === type);
     });
 
-    // Filter Section / Items visibility
     const filterItems = document.querySelectorAll('[data-filter-item]');
     filterItems.forEach(el => {
       const filterType = el.dataset.filterItem;
@@ -312,8 +313,7 @@
       }
     });
 
-    // Also adjust nav pills
-    const navPillStock = document.querySelector('.nav-pill[data-filter="stock"]');
+    const navPillStock = document.querySelector('.strip-pill[data-filter="stock"]');
     if (navPillStock) {
       navPillStock.style.display = (type === 'etf') ? 'none' : '';
     }
@@ -326,20 +326,16 @@
   }
 
   // =========================================================================
-  // PROGRESS & SCORE CALCULATIONS
+  // 6. SCORE CALCULATION & REAL-TIME UI
   // =========================================================================
-
-  function isElementVisible(el) {
-    return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
-  }
 
   function updateUI() {
     const ticker = elements.assetTicker.value.trim().toUpperCase() || 'ไม่ได้ระบุ Ticker';
     elements.footerTickerBadge.textContent = ticker;
 
-    // Filter only currently visible checkboxes
+    // Visible checkboxes only
     const visibleCheckboxes = Array.from(elements.taskCheckboxes).filter(cb => {
-      const card = cb.closest('.checklist-card');
+      const card = cb.closest('.section-card');
       const subContainer = cb.closest('[data-filter-item]');
       if (subContainer && subContainer.style.display === 'none') return false;
       if (card && card.style.display === 'none') return false;
@@ -350,19 +346,23 @@
     const checkedVisible = visibleCheckboxes.filter(cb => cb.checked).length;
     const percent = totalVisible > 0 ? Math.round((checkedVisible / totalVisible) * 100) : 0;
 
-    // Update Percentage and Stat Texts
+    // Update Percentage & Counts
     elements.scorePercent.textContent = `${percent}%`;
     elements.scoreCountPassed.textContent = `${checkedVisible} / ${totalVisible}`;
     elements.footerPercent.textContent = `${percent}%`;
     elements.footerCount.textContent = `${checkedVisible} / ${totalVisible}`;
 
-    // Update SVG Progress Ring
-    // Ring circumference: 2 * Math.PI * 70 ≈ 439.82297
-    const circumference = 2 * Math.PI * 70;
+    // Linear Progress Bar Fill
+    if (elements.scoreLinearBar) {
+      elements.scoreLinearBar.style.width = `${percent}%`;
+    }
+
+    // Radial SVG Progress Ring (radius: 76, circumference: 2 * Math.PI * 76 ≈ 477.522)
+    const circumference = 2 * Math.PI * 76;
     const offset = circumference - (percent / 100) * circumference;
     elements.scoreProgressRing.style.strokeDashoffset = offset;
 
-    // Ring Color based on percentage
+    // Dynamic Color Shift
     if (percent === 100) {
       elements.scoreProgressRing.style.stroke = 'var(--emerald-400)';
     } else if (percent >= 70) {
@@ -373,23 +373,23 @@
       elements.scoreProgressRing.style.stroke = 'var(--rose-500)';
     }
 
-    // Status Badge & Decision Message
+    // Verdict Badge & Decision Message
     if (percent === 100) {
-      elements.scoreStatusBadge.className = 'score-status-badge passed';
-      elements.scoreStatusBadge.innerHTML = '<i data-lucide="check-check" class="icon-xs"></i><span>พร้อมลงทุนตามแผน</span>';
+      elements.scoreStatusBadge.className = 'verdict-banner passed';
+      elements.scoreStatusBadge.innerHTML = '<i data-lucide="check-check" class="icon-xs"></i><span>พร้อมลงทุนตามแผน 100%</span>';
       elements.decisionStatusMessage.innerHTML = '<i data-lucide="check-circle" class="icon-sm text-emerald"></i><span class="text-emerald"><strong>ผ่านการประเมิน 100%</strong> — มีแผนและ Thesis รัดกุม พร้อมพิจารณาจังหวะเข้าซื้อ</span>';
     } else if (percent >= 80) {
-      elements.scoreStatusBadge.className = 'score-status-badge passed';
+      elements.scoreStatusBadge.className = 'verdict-banner passed';
       elements.scoreStatusBadge.innerHTML = '<i data-lucide="check" class="icon-xs"></i><span>ความพร้อมสูงมาก</span>';
       elements.decisionStatusMessage.innerHTML = '<i data-lucide="info" class="icon-sm text-cyan"></i><span>ความพร้อมสูงเกือบครบถ้วน เหลือเพียงบางจุดที่ควรทบทวนให้มั่นใจ</span>';
     } else if (percent >= 50) {
-      elements.scoreStatusBadge.className = 'score-status-badge';
+      elements.scoreStatusBadge.className = 'verdict-banner';
       elements.scoreStatusBadge.innerHTML = '<i data-lucide="alert-triangle" class="icon-xs"></i><span>ต้องทำการบ้านเพิ่ม</span>';
       elements.decisionStatusMessage.innerHTML = '<i data-lucide="alert-triangle" class="icon-sm text-amber"></i><span>ยังตอบคำถามสำคัญไม่ครบ อย่าเพิ่งรีบกดซื้อ ตลาดยังอยู่พรุ่งนี้</span>';
     } else {
-      elements.scoreStatusBadge.className = 'score-status-badge';
+      elements.scoreStatusBadge.className = 'verdict-banner';
       elements.scoreStatusBadge.innerHTML = '<i data-lucide="alert-circle" class="icon-xs"></i><span>ยังไม่ผ่านการประเมิน</span>';
-      elements.decisionStatusMessage.innerHTML = '<i data-lucide="x-circle" class="icon-sm text-danger"></i><span class="text-danger">ยังไม่แนะนำให้ซื้อ — ข้อมูลและความเข้าใจยังไม่เพียงพอต่อการรับความเสี่ยง</span>';
+      elements.decisionStatusMessage.innerHTML = '<i data-lucide="x-circle" class="icon-sm text-rose"></i><span class="text-rose">ยังไม่แนะนำให้ซื้อ — ข้อมูลและความเข้าใจยังไม่เพียงพอต่อการรับความเสี่ยง</span>';
     }
 
     // Update Individual Section Badges
@@ -401,33 +401,16 @@
   }
 
   function updateSectionBadges() {
-    // Section 1
     updateBadgeForSection(1, 'badge-sec-1', 'sec-1');
-
-    // Section 2: Overall, Stock sub, ETF sub
     updateBadgeForSection(2, 'badge-sec-2', 'sec-2');
     updateSubBadge('badge-sec-2-stock', '[data-id^="s2_s"]');
     updateSubBadge('badge-sec-2-etf', '[data-id^="s2_e"]');
-
-    // Section 3
     updateBadgeForSection(3, 'badge-sec-3', 'sec-3');
-
-    // Section 4
     updateBadgeForSection(4, 'badge-sec-4', 'sec-4');
-
-    // Section 5
     updateBadgeForSection(5, 'badge-sec-5', 'sec-5');
-
-    // Section 6
     updateBadgeForSection(6, 'badge-sec-6', 'sec-6');
-
-    // Section 7
     updateBadgeForSection(7, 'badge-sec-7', 'sec-7');
-
-    // Section 8
     updateBadgeForSection(8, 'badge-sec-8', 'sec-8');
-
-    // Section 9
     updateBadgeForSection(9, 'badge-sec-9', 'sec-9');
   }
 
@@ -461,7 +444,50 @@
   }
 
   // =========================================================================
-  // EXPORT AS MARKDOWN & CLIPBOARD
+  // 7. SECTION CHECK ALL / UNCHECK ALL TOGGLE
+  // =========================================================================
+
+  function toggleCheckAllSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+
+    const checkboxes = Array.from(section.querySelectorAll('.task-checkbox')).filter(cb => {
+      const sub = cb.closest('[data-filter-item]');
+      return !sub || sub.style.display !== 'none';
+    });
+
+    const allChecked = checkboxes.every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+
+    saveCurrentState();
+    showToast(allChecked ? 'ยกเลิกการเลือกในหมวดนี้แล้ว' : 'เลือกทั้งหมดในหมวดนี้แล้ว');
+  }
+
+  // =========================================================================
+  // 8. SCROLL SPY FOR NAVIGATION STRIP
+  // =========================================================================
+
+  function initScrollSpy() {
+    const sections = document.querySelectorAll('.section-card');
+    window.addEventListener('scroll', () => {
+      let currentSecId = '';
+      const scrollPos = window.scrollY + 200;
+
+      sections.forEach(sec => {
+        if (sec.offsetTop <= scrollPos) {
+          currentSecId = sec.getAttribute('id');
+        }
+      });
+
+      elements.stripPills.forEach(pill => {
+        const href = pill.getAttribute('href').replace('#', '');
+        pill.classList.toggle('active', href === currentSecId);
+      });
+    }, { passive: true });
+  }
+
+  // =========================================================================
+  // 9. EXPORT & REPORT GENERATOR
   // =========================================================================
 
   function generateMarkdownReport() {
@@ -474,13 +500,11 @@
     md += `**ผลการประเมินความพร้อม:** ${elements.scorePercent.textContent} (${elements.scoreCountPassed.textContent} ข้อ)\n\n`;
     md += `---\n\n`;
 
-    // Helper to extract checkbox status
     const getCheck = (id) => {
       const cb = document.querySelector(`[data-id="${id}"]`);
       return cb && cb.checked ? '[x]' : '[ ]';
     };
 
-    // Helper to get text input
     const getText = (id) => {
       const inp = document.getElementById(id);
       return inp ? inp.value.trim() : '';
@@ -599,9 +623,7 @@
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(() => {
         showToast(successMsg);
-      }).catch(err => {
-        fallbackCopy(text, successMsg);
-      });
+      }).catch(() => fallbackCopy(text, successMsg));
     } else {
       fallbackCopy(text, successMsg);
     }
@@ -633,14 +655,14 @@
   }
 
   // =========================================================================
-  // EVENT BINDINGS
+  // 10. EVENT BINDINGS
   // =========================================================================
 
   function bindEvents() {
     // Theme toggle
     elements.btnThemeToggle.addEventListener('click', toggleTheme);
 
-    // Profiles dropdown
+    // Profile Dropdown
     elements.btnProfiles.addEventListener('click', (e) => {
       e.stopPropagation();
       elements.profilesMenu.classList.toggle('hidden');
@@ -654,32 +676,47 @@
 
     elements.btnNewChecklist.addEventListener('click', createNewProfile);
 
-    // Segmented Asset Type buttons
-    elements.segmentBtns.forEach(btn => {
+    // Asset Type Tabs
+    elements.typeTabs.forEach(btn => {
       btn.addEventListener('click', () => {
         setAssetTypeFilter(btn.dataset.type, true);
       });
     });
 
-    // Inputs & Checkboxes change / autosave
-    elements.assetTicker.addEventListener('input', () => {
-      saveCurrentState();
-    });
+    // Preset Ticker Chips
+    elements.presetChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        const ticker = chip.dataset.ticker;
+        const type = chip.dataset.type;
+        const alloc = chip.dataset.alloc;
 
-    elements.targetAllocation.addEventListener('input', () => {
-      saveCurrentState();
-    });
-
-    elements.taskCheckboxes.forEach(cb => {
-      cb.addEventListener('change', () => {
+        elements.assetTicker.value = ticker;
+        elements.targetAllocation.value = alloc;
+        setAssetTypeFilter(type, true);
         saveCurrentState();
+        showToast(`เลือก ${ticker} (${type.toUpperCase()}) แล้ว`);
       });
     });
 
+    // Inputs & Checkboxes Change
+    elements.assetTicker.addEventListener('input', saveCurrentState);
+    elements.targetAllocation.addEventListener('input', saveCurrentState);
+
+    elements.taskCheckboxes.forEach(cb => {
+      cb.addEventListener('change', saveCurrentState);
+    });
+
+    // Check All per Section Buttons
+    elements.btnCheckAllList.forEach(btn => {
+      btn.addEventListener('click', () => {
+        toggleCheckAllSection(btn.dataset.targetSection);
+      });
+    });
+
+    // Auto-check parent block when typing thesis
     elements.thesisInputs.forEach(input => {
       input.addEventListener('input', () => {
-        // Auto-check parent check-item if input has value
-        const block = input.closest('.thesis-block');
+        const block = input.closest('.thesis-block-card');
         if (block) {
           const parentCb = block.querySelector('.task-checkbox');
           if (parentCb) {
@@ -691,7 +728,7 @@
       });
     });
 
-    // Actions
+    // Export & Print Actions
     elements.btnExportMarkdown.addEventListener('click', () => {
       const md = generateMarkdownReport();
       copyToClipboard(md, 'คัดลอกรายงาน Markdown เรียบร้อยแล้ว!');
@@ -699,7 +736,7 @@
 
     elements.btnCopySummary.addEventListener('click', () => {
       const md = generateMarkdownReport();
-      copyToClipboard(md, 'คัดลอกบทสรุปเรียบร้อยแล้ว!');
+      copyToClipboard(md, 'คัดลอกบทสรุปการประเมินเรียบร้อยแล้ว!');
     });
 
     elements.btnPrint.addEventListener('click', () => {
@@ -711,9 +748,22 @@
     elements.btnQuickTop.addEventListener('click', () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
+
+    // Keyboard Shortcuts (Ctrl/Cmd + S to Save/Notify, Ctrl/Cmd + E to Copy Markdown)
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        saveCurrentState();
+        showToast('บันทึกข้อมูลล่าสุดเรียบร้อยแล้ว');
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'e') {
+        e.preventDefault();
+        const md = generateMarkdownReport();
+        copyToClipboard(md, 'คัดลอกรายงาน Markdown เรียบร้อยแล้ว!');
+      }
+    });
   }
 
-  // Run on DOM Ready
+  // Run Initialization
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
