@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pre-Investment Checklist | เช็กลิสต์ก่อนลงทุนจริง</title>
+  <meta name="description" content="ระบบเช็กลิสต์กลั่นกรองการลงทุนก่อนกดซื้อหุ้นหรือ ETF (Investment Pre-Flight Checklist) ประเมินตนเอง ธุรกิจ งบการเงิน มูลค่า และ Thesis">
+  
+  <!-- Google Fonts: Inter & IBM Plex Sans Thai & Prompt -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-surface text-main">
+  <!-- Background Glow Gradients -->
+  <div class="bg-glow-container" aria-hidden="true">
+    <div class="glow-orb orb-primary"></div>
+    <div class="glow-orb orb-secondary"></div>
+    <div class="glow-orb orb-tertiary"></div>
+  </div>
+
+  <!-- Top Navigation / App Bar -->
+  <header class="app-header">
+    <div class="container header-content">
+      <div class="brand">
+        <div class="brand-icon">
+          <i data-lucide="shield-check"></i>
+        </div>
+        <div class="brand-text">
+          <div class="brand-title">INVESTOR CHECKLIST</div>
+          <div class="brand-subtitle">ระบบเช็กลิสต์ก่อนลงทุนจริง</div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Profile / Saved Checklists Manager -->
+        <div class="saved-profiles-dropdown">
+          <button id="btnProfiles" class="btn btn-glass btn-sm" title="รายการที่บันทึกไว้">
+            <i data-lucide="folder"></i>
+            <span id="activeProfileLabel">Checklist ปัจจุบัน</span>
+            <i data-lucide="chevron-down" class="icon-sm"></i>
+          </button>
+          <div id="profilesMenu" class="dropdown-menu hidden">
+            <div class="dropdown-header">Checklists ที่บันทึกไว้</div>
+            <ul id="savedProfilesList" class="profiles-list">
+              <!-- Dynamically populated -->
+            </ul>
+            <div class="dropdown-footer">
+              <button id="btnNewChecklist" class="btn btn-xs btn-primary w-full">
+                <i data-lucide="plus"></i> สร้างอันใหม่
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Export Action Menu -->
+        <button id="btnExportMarkdown" class="btn btn-glass btn-sm" title="คัดลอกเป็น Markdown">
+          <i data-lucide="copy"></i>
+          <span class="hide-mobile">คัดลอก Markdown</span>
+        </button>
+
+        <button id="btnPrint" class="btn btn-glass btn-sm" title="พิมพ์ / บันทึก PDF">
+          <i data-lucide="printer"></i>
+          <span class="hide-mobile">พิมพ์ / PDF</span>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button id="btnThemeToggle" class="btn btn-icon btn-glass" aria-label="สลับธีม สว่าง/มืด" title="สลับธีม">
+          <i data-lucide="sun" class="icon-sun"></i>
+          <i data-lucide="moon" class="icon-moon"></i>
+        </button>
+
+        <!-- Reset Button -->
+        <button id="btnReset" class="btn btn-icon btn-glass btn-danger-hover" aria-label="ล้างข้อมูล" title="ล้างเช็กลิสต์นี้">
+          <i data-lucide="rotate-ccw"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container app-body">
+    
+    <!-- Hero / Metadata Card -->
+    <section class="hero-card glass-panel">
+      <div class="hero-grid">
+        <div class="hero-info">
+          <div class="badge-pill badge-emerald">
+            <i data-lucide="sparkles" class="icon-xs"></i>
+            <span>Pre-Flight Investment Discipline</span>
+          </div>
+          <h1 class="hero-title">Final Checklist — ก่อนลงทุนจริง</h1>
+          <p class="hero-desc">ก่อนกดซื้อหุ้นหรือ ETF สักตัว ลองเช็กว่าตอบสิ่งพวกนี้ได้หรือยัง ความมีวินัยคือเกราะป้องกันความเสี่ยงที่ดีที่สุดในตลาด</p>
+          
+          <div class="asset-meta-form">
+            <div class="form-group">
+              <label for="assetTicker">ชื่อสินทรัพย์ / Ticker</label>
+              <div class="input-with-icon">
+                <i data-lucide="search" class="input-icon"></i>
+                <input type="text" id="assetTicker" placeholder="เช่น NVDA, AAPL, VOO, BDMS" autocomplete="off" spellcheck="false">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="assetTypeSelect">ประเภทสินทรัพย์</label>
+              <div class="type-segmented-control">
+                <button type="button" class="segment-btn active" data-type="all">ทั้งหมด</button>
+                <button type="button" class="segment-btn" data-type="stock">
+                  <i data-lucide="building-2" class="icon-xs"></i> หุ้นรายตัว
+                </button>
+                <button type="button" class="segment-btn" data-type="etf">
+                  <i data-lucide="pie-chart" class="icon-xs"></i> ETF
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="targetAllocation">สัดส่วนพอร์ตเป้าหมาย (%)</label>
+              <div class="input-with-icon">
+                <i data-lucide="percent" class="input-icon"></i>
+                <input type="number" id="targetAllocation" placeholder="เช่น 5% หรือ 10%" min="0" max="100" step="0.5">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Overall Score Card -->
+        <div class="score-card">
+          <div class="score-circle-wrapper">
+            <svg class="score-svg" viewBox="0 0 160 160">
+              <circle class="score-bg-ring" cx="80" cy="80" r="70"></circle>
+              <circle id="scoreProgressRing" class="score-progress-ring" cx="80" cy="80" r="70"></circle>
+            </svg>
+            <div class="score-text-content">
+              <span id="scorePercent" class="score-number">0%</span>
+              <span class="score-caption">ความพร้อม</span>
+            </div>
+          </div>
+
+          <div class="score-details">
+            <div class="score-stat">
+              <span class="stat-label">ผ่านแล้ว</span>
+              <span id="scoreCountPassed" class="stat-value text-emerald">0 / 38</span>
+            </div>
+            <div class="score-status-badge" id="scoreStatusBadge">
+              <i data-lucide="alert-circle" class="icon-xs"></i>
+              <span id="scoreStatusText">ยังไม่ผ่านการประเมิน</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Nav Jump Bar -->
+      <div class="section-nav-pills">
+        <span class="nav-pills-label">ข้ามไปยังหัวข้อ:</span>
+        <a href="#sec-1" class="nav-pill" data-sec="1">1. ตัวเราเอง</a>
+        <a href="#sec-2" class="nav-pill" data-sec="2">2. กำลังซื้ออะไร</a>
+        <a href="#sec-3" class="nav-pill" data-sec="3" data-filter="stock">3. ธุรกิจแข็งแรงไหม</a>
+        <a href="#sec-4" class="nav-pill" data-sec="4">4. หุ้นดี ราคาดีไหม</a>
+        <a href="#sec-5" class="nav-pill" data-sec="5">5. Investment Thesis</a>
+        <a href="#sec-6" class="nav-pill" data-sec="6">6. Portfolio Risk</a>
+        <a href="#sec-7" class="nav-pill" data-sec="7">7. แผนหลังซื้อ</a>
+        <a href="#sec-8" class="nav-pill" data-sec="8">8. Technical</a>
+        <a href="#sec-9" class="nav-pill nav-pill-final" data-sec="9">Final Decision</a>
+      </div>
+    </section>
+
+    <!-- Content Sections Grid -->
+    <div class="checklist-grid">
+
+      <!-- SECTION 1: ตัวเราเอง -->
+      <section id="sec-1" class="checklist-card glass-panel" data-section="1">
+        <div class="card-header">
+          <div class="section-index">01</div>
+          <div class="section-title-wrap">
+            <h2 class="section-title">1. ตัวเราเอง (Self-Assessment & Mindset)</h2>
+            <p class="section-subtitle">ความพร้อมด้านการเงินและสภาวะจิตใจก่อนรับความเสี่ยง</p>
+          </div>
+          <div class="section-badge" id="badge-sec-1">0 / 5</div>
+        </div>
+
+        <div class="checklist-items">
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s1_1">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">เงินก้อนนี้เป็นเงินที่ยังไม่จำเป็นต้องใช้ในเร็ว ๆ นี้</span>
+              <span class="item-desc">เป็นเงินเย็นที่ปล่อยให้เติบโตได้ ไม่ต้องถอนฉุกเฉินมาใช้จ่าย</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s1_2">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">มีเงินสำรองฉุกเฉินแยกจากเงินลงทุนแล้ว</span>
+              <span class="item-desc">มีค่าใช้จ่าย 6-12 เดือนเก็บไว้ในสินทรัพย์สภาพคล่องสูง ปลอดภัย</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s1_3">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">รู้ว่าตัวเองรับการขาดทุนหรือความผันผวนได้ประมาณไหน</span>
+              <span class="item-desc">หากราคาร่วงลง -20% ถึง -40% จะไม่ตื่นตระหนกจนนอนไม่หลับ</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s1_4">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">รู้ว่าลงทุนระยะสั้น กลาง หรือยาว</span>
+              <span class="item-desc">กำหนด Time Horizon ชัดเจน และสอดคล้องกับกลยุทธ์ของสินทรัพย์</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s1_5">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">ไม่ได้ซื้อเพราะ FOMO หรือเห็นคนอื่นกำไร</span>
+              <span class="item-desc">ตัดสินใจจากข้อมูลและการวิเคราะห์ของตัวเอง ไม่ใช่วิ่งตามกระแสโซเชียล</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="pass-criteria-box">
+          <div class="criteria-label"><i data-lucide="check-circle-2" class="icon-sm"></i> ผ่านเมื่อ:</div>
+          <div class="criteria-text">ถ้าพอร์ตลงแรงแล้วยังสามารถทำตามแผนเดิมได้ ไม่จำเป็นต้องรีบขายเพราะกลัว</div>
+        </div>
+      </section>
+
+      <!-- SECTION 2: เรารู้ไหมว่ากำลังซื้ออะไร -->
+      <section id="sec-2" class="checklist-card glass-panel" data-section="2">
+        <div class="card-header">
+          <div class="section-index">02</div>
+          <div class="section-title-wrap">
+            <h2 class="section-title">2. เรารู้ไหมว่ากำลังซื้ออะไร (Understanding the Asset)</h2>
+            <p class="section-subtitle">ทำความเข้าใจในเนื้อแท้ของโมเดลธุรกิจ หรือโครงสร้างการลงทุน</p>
+          </div>
+          <div class="section-badge" id="badge-sec-2">0 / 14</div>
+        </div>
+
+        <!-- Sub-section: หุ้นรายตัว -->
+        <div class="sub-section-container" data-filter-item="stock">
+          <div class="sub-header">
+            <div class="sub-header-title">
+              <i data-lucide="building" class="icon-emerald"></i>
+              <span>ถ้าเป็นหุ้นรายตัว (Individual Stock)</span>
+            </div>
+            <span class="sub-badge" id="badge-sec-2-stock">0 / 7</span>
+          </div>
+
+          <div class="checklist-items">
+            <label class="check-item">
+              <input type="checkbox" class="task-checkbox" data-id="s2_s1">
+              <span class="custom-checkbox"><i data-lucide="check"></i></span>
+              <div class="item-content">
+                <span class="item-title">อธิบายได้ว่าบริษัททำธุรกิจอะไร</span>
+                <span class="item-desc">เข้าใจสินค้า บริการ และสิ่งที่บริษัทส่งมอบให้กับตลาด</span>
+              </div>
+            </label>
+
+            <label class="check-item">
+              <input type="checkbox" class="task-checkbox" data-id="s2_s2">
+              <span class="custom-checkbox"><i data-lucide="check"></i></span>
+              <div class="item-content">
+                <span class="item-title">รู้ว่าบริษัทหาเงินจากไหน (Business & Revenue Model)</span>
+                <span class="item-desc">ช่องทางสร้างรายได้หลัก และสัดส่วนรายได้จากแต่ละส่วนธุรกิจ</span>
+              </div>
+            </label>
+
+            <label class="check-item">
+              <input type="checkbox" class="task-checkbox" data-id="s2_s3">
+              <span class="custom-checkbox"><i data-lucide="check"></i></span>
+              <div class="item-content">
+                <span class="item-title">รู้ว่าลูกค้าหลักคือใคร (Target Customers)</span>
+                <span class="item-desc">B2B, B2C, รัฐบาล หรือกระจุกตัวอยู่กับลูกค้ารายใหญ่ไม่กี่เจ้า</span>
+              </div>
+            </label>
+
+            <label class="check-item">
+              <input type="checkbox" class="task-checkbox" data-id="s2_s4">
+              <span class="custom-checkbox"><i data-lucide="check"></i></span>
+              <div class="item-content">
+                <span class="item-title">รู้ว่าอะไรทำให้รายได้โต (Key Growth Drivers)</span>
+                <span class="item-desc">การขยายสาขา เพิ่มราคา ออกสินค้าใหม่ หรือตลาดรวมกำลังเติบโต</span>
+              </div>
+            </label>
+
+            <label class="check-item">
+              <input type="checkbox" class="task-checkbox" data-id="s2_s5">
+              <span class="custom-checkbox"><i data-lucide="check"></i></span>
+              <div class="item-content">
+                <span class="item-title">รู้ว่าคู่แข่งหลักคือใคร (Competitive Landscape)</span>
+                <span class="item-desc">ใครคือผู้เล่นเบอร์ 1, 2 และบริษัทกำลังแย่ง Market Share หรือกำลังโดนแย่ง</span>
+              </div>
+            </label>
+
+            <label class="check-item">
+              <input type="checkbox" class="task-checkbox" data-id="s2_s6">
+              <span class="custom-checkbox"><i data-lucide="check"></i></span>
+              <div class="item-content">
+                <span class="item-title">พออธิบายได้ว่าบริษัทมี Moat หรือข้อได้เปรียบอะไร</span>
+                <span class="item-desc">Network Effect, Brand, Switching Cost, Cost Advantage, หรือ Patents</span>
+              </div>
+            </label>
+
+            <label class="check-item">
+              <input type="checkbox" class="task-checkbox" data-id="s2_s7">
+              <span class="custom-checkbox"><i data-lucide="check"></i></span>
+              <div class="item-content">
+                <span class="item-title">รู้ว่าความเสี่ยงหลักของธุรกิจคืออะไร (Key Risks)</span>
+                <span class="item-desc">การเปลี่ยนแปลงทางเทคโนโลยี กฎหมาย ดอกเบี้ย หรือพฤติกรรมผู้บริโภค</span>
+              </div>
+            </label>
+          </div>
+
+          <div class="pass-criteria-box">
+            <div class="criteria-label"><i data-lucide="check-circle-2" class="icon-sm"></i> ผ่านเมื่อ:</div>
+            <div class="criteria-text">สามารถอธิบายบริษัทนี้ให้คนที่ไม่รู้จักฟังแบบเข้าใจง่าย ๆ ได้</div>
+            <div class="criteria-warning mt-2">
+              <i data-lucide="alert-triangle" class="icon-xs text-amber"></i>
+              <span>ถ้ายังตอบไม่ได้ว่า <strong>“บริษัททำเงินยังไง”</strong> &rarr; ยังไม่ควรรีบซื้อ</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sub-section: ETF -->
+        <div class="sub-section-container mt-6" data-filter-item="etf">
+          <div class="sub-header">
+            <div class="sub-header-title">
+              <i data-lucide="layers" class="icon-cyan"></i>
+              <span>ถ้าเป็น ETF (Exchange-Traded Fund)</span>
+            </div>
+            <span class="sub-badge" id="badge-sec-2-etf">0 / 7</span>
+          </div>
+
+          <div class="checklist-items">
+            <label class="check-item">
+              <input type="checkbox" class="task-checkbox" data-id="s2_e1">
+              <span class="custom-checkbox"><i data-lucide="check"></i></span>
+              <div class="item-content">
+                <span class="item-title">รู้ว่า ETF นี้ลงทุนตาม Index หรือ Strategy อะไร</span>
+                <span class="item-desc">Passive Index (S&P 500, Nasdaq 100), Factor Investing, หรือ Active ETF</span>
+              </div>
+            </label>
+
+            <label class="check-item">
+              <input type="checkbox" class="task-checkbox" data-id="s2_e2">
+              <span class="custom-checkbox"><i data-lucide="check"></i></span>
+              <div class="item-content">
+                <span class="item-title">เปิดดู Holdings แล้ว</span>
+                <span class="item-desc">ตรวจสอบรายชื่อหุ้นทั้งหมดที่กองทุนนี้ถือครอง</span>
+              </div>
+            </label>
+
+            <label class="check-item">
+              <input type="checkbox" class="task-checkbox" data-id="s2_e3">
+              <span class="custom-checkbox"><i data-lucide="check"></i></span>
+              <div class="item-content">
+                <span class="item-title">รู้ว่า Top Holdings มีอะไรบ้าง</span>
+                <span class="item-desc">รู้ว่าหุ้น Top 5 - Top 10 ตัวแรกคือกองไหน และกินสัดส่วนกี่ %</span>
+              </div>
+            </label>
+
+            <label class="check-item">
+              <input type="checkbox" class="task-checkbox" data-id="s2_e4">
+              <span class="custom-checkbox"><i data-lucide="check"></i></span>
+              <div class="item-content">
+                <span class="item-title">ดู Sector Allocation แล้ว</span>
+                <span class="item-desc">รู้ว่าเงินลงใน Tech, Healthcare, Financials หรืออุตสาหกรรมใดบ้าง</span>
+              </div>
+            </label>
+
+            <label class="check-item">
+              <input type="checkbox" class="task-checkbox" data-id="s2_e5">
+              <span class="custom-checkbox"><i data-lucide="check"></i></span>
+              <div class="item-content">
+                <span class="item-title">รู้ว่า ETF กระจายจริงหรือกระจุกอยู่ใน Sector/หุ้นไม่กี่ตัว</span>
+                <span class="item-desc">ตรวจสอบ Concentration Risk (ระวังภาพลวงตาของการกระจายความเสี่ยง)</span>
+              </div>
+            </label>
+
+            <label class="check-item">
+              <input type="checkbox" class="task-checkbox" data-id="s2_e6">
+              <span class="custom-checkbox"><i data-lucide="check"></i></span>
+              <div class="item-content">
+                <span class="item-title">ดู Expense Ratio แล้ว</span>
+                <span class="item-desc">ค่าธรรมเนียมบริหารจัดการรายปีอยู่ในเกณฑ์ที่สมเหตุสมผลหรือไม่ (เช่น < 0.2% สำหรับ Passive)</span>
+              </div>
+            </label>
+
+            <label class="check-item">
+              <input type="checkbox" class="task-checkbox" data-id="s2_e7">
+              <span class="custom-checkbox"><i data-lucide="check"></i></span>
+              <div class="item-content">
+                <span class="item-title">ถ้ามี ETF หลายตัว เช็กแล้วว่ามี Holding Overlap กันมากแค่ไหน</span>
+                <span class="item-desc">เช็กว่าไม่ได้ซื้อกองซ้ำซ้อนที่มีหุ้นชุดเดียวกันโดยไม่จำเป็น</span>
+              </div>
+            </label>
+          </div>
+
+          <div class="pass-criteria-box">
+            <div class="criteria-label"><i data-lucide="check-circle-2" class="icon-sm"></i> ผ่านเมื่อ:</div>
+            <div class="criteria-text">อธิบายได้ว่าเงิน 100 บาทที่ใส่ ETF นี้ โดยประมาณกำลังถูกกระจายไปที่อะไรบ้าง</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 3: ธุรกิจแข็งแรงไหม -->
+      <section id="sec-3" class="checklist-card glass-panel" data-section="3" data-filter-item="stock">
+        <div class="card-header">
+          <div class="section-index">03</div>
+          <div class="section-title-wrap">
+            <h2 class="section-title">3. ธุรกิจแข็งแรงไหม (Financial Health & Fundamentals)</h2>
+            <p class="section-subtitle">สำหรับหุ้นรายตัว อย่างน้อยควรเปิดงบการเงินดูแนวโน้มย้อนหลังหลายปี</p>
+          </div>
+          <div class="section-badge" id="badge-sec-3">0 / 8</div>
+        </div>
+
+        <div class="callout-tip mb-4">
+          <i data-lucide="trending-up" class="icon-emerald"></i>
+          <div>
+            <strong>อย่าดูแค่งบปีเดียว:</strong> ควรเปิดดูย้อนหลัง 3–5 ปีเพื่อดู <strong>Trend และ Resilience</strong> ของธุรกิจ
+          </div>
+        </div>
+
+        <div class="checklist-items">
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s3_1">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title"><strong>Revenue</strong> — รายได้โตไหม และโตต่อเนื่องหรือไม่</span>
+              <span class="item-desc">ดูอัตราการเติบโตแบบ YoY และ CAGR ว่ามาจาก Organic Growth หรือไม่</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s3_2">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title"><strong>Gross Margin</strong> — Margin ทรงตัวหรือดีขึ้นไหม</span>
+              <span class="item-desc">บ่งบอกถึง Pricing Power และความสามารถในการควบคุมต้นทุนขาย</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s3_3">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title"><strong>Operating Margin</strong> — บริษัทควบคุมค่าใช้จ่ายและ Scale ได้ไหม</span>
+              <span class="item-desc">Operating Leverage กำลังทำงานหรือไม่เมื่อรายได้เพิ่มขึ้น</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s3_4">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title"><strong>Net Income</strong> — บริษัทมีกำไรจริงไหม</span>
+              <span class="item-desc">กำไรสุทธิเป็นบวกและมีคุณภาพกำไร (ไม่ได้มาจากรายการพิเศษครั้งเดียว)</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s3_5">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title"><strong>Free Cash Flow (FCF)</strong> — ธุรกิจสร้างเงินสดจริงหรือเปล่า</span>
+              <span class="item-desc">Cash Flow from Operations หักลบ CapEx แล้วมีเงินสดอิสระเหลือจริง</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s3_6">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title"><strong>Debt & Liquidity</strong> — หนี้อยู่ในระดับที่รับได้ไหม</span>
+              <span class="item-desc">ตรวจ Net Debt / EBITDA, Interest Coverage Ratio และภาระหนี้ระยะสั้น</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s3_7">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title"><strong>ROE / ROIC</strong> — ใช้เงินทุนได้มีประสิทธิภาพไหม</span>
+              <span class="item-desc">ผลตอบแทนต่อเงินทุนที่ใส่ลงไปคุ้มค่าและสูงกว่าต้นทุนเงินทุน (WACC)</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s3_8">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title"><strong>Shares Outstanding</strong> — มี Dilution ผู้ถือหุ้นหนักหรือไม่</span>
+              <span class="item-desc">จำนวนหุ้นเพิ่มขึ้นต่อเนื่องจากการออกหุ้นเพิ่มทุน/SBC หรือมี Share Buyback คืนเงินให้ผู้ถือหุ้น</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="pass-criteria-box">
+          <div class="criteria-label"><i data-lucide="check-circle-2" class="icon-sm"></i> ผ่านเมื่อ:</div>
+          <div class="criteria-text">พออธิบายได้ว่าฐานะทางการเงินของบริษัทกำลังดีขึ้น ทรงตัว หรือแย่ลง และรู้ว่าเพราะอะไร</div>
+        </div>
+      </section>
+
+      <!-- SECTION 4: หุ้นดี แล้วราคาดีไหม -->
+      <section id="sec-4" class="checklist-card glass-panel" data-section="4">
+        <div class="card-header">
+          <div class="section-index">04</div>
+          <div class="section-title-wrap">
+            <h2 class="section-title">4. หุ้นดี แล้วราคาดีไหม (Valuation & Price)</h2>
+            <p class="section-subtitle">หุ้นดี &ne; ซื้อได้ทุกราคา และ หุ้นถูก &ne; เป็นหุ้นที่ดี</p>
+          </div>
+          <div class="section-badge" id="badge-sec-4">0 / 6</div>
+        </div>
+
+        <div class="quote-card mb-4">
+          <div class="quote-icon"><i data-lucide="quote"></i></div>
+          <div class="quote-body">
+            <div><strong>หุ้นดี &ne; ซื้อได้ทุกราคา</strong></div>
+            <div><strong>หุ้นถูก &ne; เป็นหุ้นที่ดี</strong></div>
+          </div>
+        </div>
+
+        <div class="checklist-items">
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s4_1">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">ดู Valuation แล้ว</span>
+              <span class="item-desc">คำนวณและเช็กระดับความถูก-แพงของราคาปัจจุบัน</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s4_2">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">ใช้ Ratio ที่เหมาะกับธุรกิจ ไม่ได้ดูแค่ P/E อย่างเดียว</span>
+              <span class="item-desc">เลือกมาตรวัดมูลค่าให้สอดคล้องกับลักษณะเฉพาะของอุตสาหกรรม</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s4_3">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">เปรียบเทียบกับอดีตของบริษัท (Historical Multiples)</span>
+              <span class="item-desc">เทียบกับค่าเฉลี่ย 3-5 ปี (P/E Band, EV/EBITDA Band) ในอดีต</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s4_4">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">เปรียบเทียบกับบริษัทใกล้เคียง (Peer Comparison)</span>
+              <span class="item-desc">เทียบ Valuation กับคู่แข่งในอุตสาหกรรมเดียวกันที่มีโมเดลธุรกิจคล้ายกัน</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s4_5">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">เอา Growth ของบริษัทมาคิดประกอบด้วย</span>
+              <span class="item-desc">พิจารณา PEG Ratio หรือ Forward Multiple ตามการเติบโตที่คาดการณ์</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s4_6">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">คิดถึงความเสี่ยงของธุรกิจประกอบกับราคาที่จ่าย (Margin of Safety)</span>
+              <span class="item-desc">มีส่วนเผื่อความปลอดภัยหากการคาดการณ์ไม่เป็นไปตามเป้าหมาย</span>
+            </div>
+          </label>
+        </div>
+
+        <!-- Valuation Cheat Sheet Box -->
+        <div class="cheat-sheet-box mt-4">
+          <div class="cheat-sheet-title">
+            <i data-lucide="help-circle" class="icon-sm"></i>
+            <span>คู่มือแนวทาง Ratio ตามประเภทธุรกิจ:</span>
+          </div>
+          <div class="ratio-tags-grid">
+            <div class="ratio-card">
+              <div class="ratio-type">บริษัทมีกำไรแล้ว (Profitable)</div>
+              <div class="ratio-list">P/E, Forward P/E, PEG, P/FCF</div>
+            </div>
+            <div class="ratio-card">
+              <div class="ratio-type">บริษัท Growth สูง (High Growth)</div>
+              <div class="ratio-list">EV/Sales, Revenue Growth, Gross Margin</div>
+            </div>
+            <div class="ratio-card">
+              <div class="ratio-type">บริษัทอิ่มตัว / ปันผล (Mature / Dividend)</div>
+              <div class="ratio-list">P/E, FCF Yield, Dividend Yield</div>
+            </div>
+            <div class="ratio-card">
+              <div class="ratio-type">บริษัทหนี้สูง / หนักสินทรัพย์ (Leveraged)</div>
+              <div class="ratio-list">Debt/EBITDA, Interest Coverage, EV/EBITDA</div>
+            </div>
+            <div class="ratio-card">
+              <div class="ratio-type">กลุ่มธนาคาร / การเงิน (Bank & Finance)</div>
+              <div class="ratio-list">P/B, ROE, NPL Ratio, Credit Cost</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pass-criteria-box">
+          <div class="criteria-label"><i data-lucide="check-circle-2" class="icon-sm"></i> ผ่านเมื่อ:</div>
+          <div class="criteria-text">สามารถตอบได้ว่า <strong>“ทำไมราคานี้ถึงน่าสนใจสำหรับเรา?”</strong> ไม่ใช่แค่ <em>“มันลงมาเยอะแล้ว”</em></div>
+        </div>
+      </section>
+
+      <!-- SECTION 5: มี Investment Thesis หรือยัง -->
+      <section id="sec-5" class="checklist-card glass-panel" data-section="5">
+        <div class="card-header">
+          <div class="section-index">05</div>
+          <div class="section-title-wrap">
+            <h2 class="section-title">5. มี Investment Thesis หรือยัง (Thesis Builder)</h2>
+            <p class="section-subtitle">ก่อนซื้อ ลองเขียนสรุปสมมติฐานการลงทุนสั้น ๆ ให้ชัดเจน</p>
+          </div>
+          <div class="section-badge" id="badge-sec-5">0 / 4</div>
+        </div>
+
+        <div class="thesis-builder-container">
+          
+          <!-- Q1: ทำไมถึงซื้อ -->
+          <div class="thesis-block">
+            <div class="thesis-block-header">
+              <label class="check-item-inline">
+                <input type="checkbox" class="task-checkbox" data-id="s5_1">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                <span class="thesis-heading">ทำไมถึงซื้อหุ้น/ETF ตัวนี้? (3 Core Reasons)</span>
+              </label>
+            </div>
+            <div class="thesis-inputs">
+              <div class="input-line">
+                <span class="input-prefix">1.</span>
+                <input type="text" id="thesis_reason_1" class="thesis-input" placeholder="เหตุผลข้อที่ 1 เช่น ผู้นำตลาดที่ยังขยายตัวได้อีกมาก">
+              </div>
+              <div class="input-line">
+                <span class="input-prefix">2.</span>
+                <input type="text" id="thesis_reason_2" class="thesis-input" placeholder="เหตุผลข้อที่ 2 เช่น Margin ขยายตัวจากเทคโนโลยีใหม่">
+              </div>
+              <div class="input-line">
+                <span class="input-prefix">3.</span>
+                <input type="text" id="thesis_reason_3" class="thesis-input" placeholder="เหตุผลข้อที่ 3 เช่น ได้รับผลบวกจากเมกะเทรนด์ระยะยาว">
+              </div>
+            </div>
+          </div>
+
+          <!-- Q2: อะไรจะทำให้บริษัทโต -->
+          <div class="thesis-block">
+            <div class="thesis-block-header">
+              <label class="check-item-inline">
+                <input type="checkbox" class="task-checkbox" data-id="s5_2">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                <span class="thesis-heading">อะไรจะทำให้บริษัทโต? (Growth Drivers)</span>
+              </label>
+            </div>
+            <div class="thesis-inputs">
+              <div class="input-line">
+                <span class="input-prefix">&bull;</span>
+                <input type="text" id="thesis_growth_1" class="thesis-input" placeholder="Growth Driver 1 เช่น การบุกตลาดต่างประเทศ">
+              </div>
+              <div class="input-line">
+                <span class="input-prefix">&bull;</span>
+                <input type="text" id="thesis_growth_2" class="thesis-input" placeholder="Growth Driver 2 เช่น สินค้าตัวใหม่มี Adoption สูง">
+              </div>
+            </div>
+          </div>
+
+          <!-- Q3: ความเสี่ยงคืออะไร -->
+          <div class="thesis-block">
+            <div class="thesis-block-header">
+              <label class="check-item-inline">
+                <input type="checkbox" class="task-checkbox" data-id="s5_3">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                <span class="thesis-heading">ความเสี่ยงคืออะไร? (Key Risks)</span>
+              </label>
+            </div>
+            <div class="thesis-inputs">
+              <div class="input-line">
+                <span class="input-prefix">&bull;</span>
+                <input type="text" id="thesis_risk_1" class="thesis-input" placeholder="Risk 1 เช่น คู่แข่งรายใหม่เข้ามาตัดราคา">
+              </div>
+              <div class="input-line">
+                <span class="input-prefix">&bull;</span>
+                <input type="text" id="thesis_risk_2" class="thesis-input" placeholder="Risk 2 เช่น กฎระเบียบภาครัฐที่เข้มงวดขึ้น">
+              </div>
+              <div class="input-line">
+                <span class="input-prefix">&bull;</span>
+                <input type="text" id="thesis_risk_3" class="thesis-input" placeholder="Risk 3 เช่น การชะลอตัวของเศรษฐกิจมหภาค">
+              </div>
+            </div>
+          </div>
+
+          <!-- Q4: อะไรเกิดขึ้นแล้วแปลว่าเราผิด -->
+          <div class="thesis-block">
+            <div class="thesis-block-header">
+              <label class="check-item-inline">
+                <input type="checkbox" class="task-checkbox" data-id="s5_4">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                <span class="thesis-heading text-danger">อะไรเกิดขึ้นแล้วแปลว่าเราวิเคราะห์ผิด? (Thesis Break Criteria)</span>
+              </label>
+            </div>
+            <div class="thesis-inputs">
+              <div class="input-line">
+                <span class="input-prefix text-danger">&times;</span>
+                <input type="text" id="thesis_break_1" class="thesis-input input-danger-focus" placeholder="Thesis Break 1 เช่น อัตราการเติบโตของรายได้ต่ำกว่า 10% ติดกัน 2 ไตรมาส">
+              </div>
+              <div class="input-line">
+                <span class="input-prefix text-danger">&times;</span>
+                <input type="text" id="thesis_break_2" class="thesis-input input-danger-focus" placeholder="Thesis Break 2 เช่น ผู้บริหารลาออกยกชุด หรือสูญเสียลูกค้ารายใหญ่">
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="pass-criteria-box">
+          <div class="criteria-label"><i data-lucide="check-circle-2" class="icon-sm"></i> ผ่านเมื่อ:</div>
+          <div class="criteria-text">รู้ทั้งเหตุผลที่จะซื้อ และรู้ว่าอะไรเกิดขึ้นแล้วควรกลับมาทบทวนการลงทุนใหม่ (ตัดขาดทุนหรือขายออก)</div>
+        </div>
+      </section>
+
+      <!-- SECTION 6: Portfolio รับมันไหวไหม -->
+      <section id="sec-6" class="checklist-card glass-panel" data-section="6">
+        <div class="card-header">
+          <div class="section-index">06</div>
+          <div class="section-title-wrap">
+            <h2 class="section-title">6. Portfolio รับมันไหวไหม (Position Sizing & Portfolio Risk)</h2>
+            <p class="section-subtitle">หุ้นดีไม่ได้หมายความว่าต้องใส่เงินทั้งหมดลงไป</p>
+          </div>
+          <div class="section-badge" id="badge-sec-6">0 / 5</div>
+        </div>
+
+        <div class="checklist-items">
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s6_1">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">รู้ว่าจะให้หุ้นตัวนี้กิน Portfolio กี่ %</span>
+              <span class="item-desc">กำหนดเพดาน Max Allocation ชัดเจน เช่น ไม่เกิน 5% หรือ 10% ของพอร์ต</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s6_2">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">ถ้าหุ้นตัวนี้ลง -50% Portfolio โดยรวมยังรับได้</span>
+              <span class="item-desc">คำนวณแล้วว่าผลกระทบรวมต่อพอร์ตทั้งหมดไม่ทำให้เกิดความเสียหายร้ายแรง</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s6_3">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">ไม่ได้ Concentrate โดยไม่รู้ตัว</span>
+              <span class="item-desc">ไม่ถือหุ้นตัวเดียวเยอะเกินไปจนเสี่ยงต่อความมั่งคั่งทั้งหมด</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s6_4">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">เช็กแล้วว่าหุ้น/ETF ที่ถือไม่ได้กระจุกอยู่ใน Sector เดียวกันมากเกินไป</span>
+              <span class="item-desc">หลีกเลี่ยงการถือหุ้นหลายตัวที่ผูกอยู่กับปัจจัยเสี่ยงภายนอกชุดเดียวกัน</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s6_5">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">มีแผนว่าจะลงทุนครั้งเดียว (Lump Sum) หรือทยอยลงทุน (DCA)</span>
+              <span class="item-desc">แบ่งไม้ในการเข้าซื้อตามแผน ไม่ All-in ตามอารมณ์ชั่ววูบ</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="pass-criteria-box">
+          <div class="criteria-label"><i data-lucide="check-circle-2" class="icon-sm"></i> ผ่านเมื่อ:</div>
+          <div class="criteria-text">หุ้นตัวเดียวผิดทางแล้ว <strong>ไม่ทำให้แผนการเงินทั้งหมดพัง</strong></div>
+        </div>
+      </section>
+
+      <!-- SECTION 7: มีแผนหลังจากซื้อหรือยัง -->
+      <section id="sec-7" class="checklist-card glass-panel" data-section="7">
+        <div class="card-header">
+          <div class="section-index">07</div>
+          <div class="section-title-wrap">
+            <h2 class="section-title">7. มีแผนหลังจากซื้อหรือยัง (Post-Purchase Action Plan)</h2>
+            <p class="section-subtitle">อย่าคิดแค่ “ซื้อที่ราคาไหน” ต้องคิดด้วยว่าจะบริหาร Position นี้ยังไง</p>
+          </div>
+          <div class="section-badge" id="badge-sec-7">0 / 5</div>
+        </div>
+
+        <div class="checklist-items">
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s7_1">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">ถ้าราคาลงแต่ Fundamental ไม่เปลี่ยน จะทำอะไร</span>
+              <span class="item-desc">มีเงินสำรองสำหรับซื้อเพิ่มเพื่อลดต้นทุนเฉลี่ย หรือถืออดทนรอตามแผน</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s7_2">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">ถ้าราคาขึ้นจน Valuation แพงมาก จะทำอะไร</span>
+              <span class="item-desc">มีเกณฑ์ Take Profit หรือ Rebalance พอร์ตเมื่อราคาเกินมูลค่าพื้นฐานอย่างมีนัยสำคัญ</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s7_3">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">ถ้า Fundamental แย่ลง จะทำอะไร</span>
+              <span class="item-desc">พร้อมยอมรับความจริงและปรับลดน้ำหนักการลงทุน ไม่หลอกตัวเอง</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s7_4">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">ถ้า Investment Thesis พัง จะทำอะไร</span>
+              <span class="item-desc">มีวินัยที่จะ Cut Loss หรือขายออกทันทีโดยไม่ติดดอยด้วยความหวังลม ๆ แล้ง ๆ</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s7_5">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">รู้ว่าจะกลับมา Review บริษัทเมื่อไร (เช่น ทุก Earnings Call)</span>
+              <span class="item-desc">ตั้งเวลาทบทวนงบและข้อมูลทุกไตรมาสหรือทุกครึ่งปี</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="pass-criteria-box">
+          <div class="criteria-label"><i data-lucide="check-circle-2" class="icon-sm"></i> ผ่านเมื่อ:</div>
+          <div class="criteria-text">หลังจากซื้อแล้ว เรามีคู่มือการตัดสินใจในทุกกรณี (ขึ้น / ลง / ทรงตัว) ชัดเจน</div>
+        </div>
+      </section>
+
+      <!-- SECTION 8: Technical — ใช้เป็นเครื่องมือเสริม -->
+      <section id="sec-8" class="checklist-card glass-panel" data-section="8">
+        <div class="card-header">
+          <div class="section-index">08</div>
+          <div class="section-title-wrap">
+            <h2 class="section-title">8. Technical — ใช้เป็นเครื่องมือเสริม (Timing & Risk)</h2>
+            <p class="section-subtitle">ใช้กราฟช่วยจับจังหวะและบริหารจุดเข้าซื้อ ไม่ใช่เหตุผลหลักในการถือครอง</p>
+          </div>
+          <div class="section-badge" id="badge-sec-8">0 / 4</div>
+        </div>
+
+        <div class="guideline-grid mb-4">
+          <div class="guideline-card">
+            <div class="guideline-title text-emerald"><i data-lucide="pie-chart" class="icon-xs"></i> Fundamental</div>
+            <div class="guideline-text">ใช้เลือกว่า <strong>จะลงทุนอะไร</strong></div>
+          </div>
+          <div class="guideline-card">
+            <div class="guideline-title text-cyan"><i data-lucide="calculator" class="icon-xs"></i> Valuation</div>
+            <div class="guideline-text">ใช้ดูว่า <strong>ราคาสมเหตุสมผลไหม</strong></div>
+          </div>
+          <div class="guideline-card">
+            <div class="guideline-title text-amber"><i data-lucide="activity" class="icon-xs"></i> Technical</div>
+            <div class="guideline-text">ใช้ช่วยดู <strong>จังหวะ & ความเสี่ยง</strong></div>
+          </div>
+        </div>
+
+        <div class="checklist-items">
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s8_1">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">รู้ว่า Trend ตอนนี้เป็นอย่างไร</span>
+              <span class="item-desc">Uptrend, Downtrend หรือ Sideway ใน Timeframe หลัก (Daily / Weekly)</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s8_2">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">ดู EMA / Supply / Demand หรือระบบที่ตัวเองใช้</span>
+              <span class="item-desc">สังเกตแนวรับ แนวต้าน จุดกลับตัว และสัญญาณ Volume สนับสนุน</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s8_3">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">ไม่ซื้อหุ้นแย่เพียงเพราะกราฟดูดี</span>
+              <span class="item-desc">กราฟสวยแค่ไหนแต่ถ้าธุรกิจกลวงและไม่มีอนาคตก็ไม่แตะ</span>
+            </div>
+          </label>
+
+          <label class="check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s8_4">
+            <span class="custom-checkbox"><i data-lucide="check"></i></span>
+            <div class="item-content">
+              <span class="item-title">ไม่ขายบริษัทดีเพียงเพราะ Indicator ตัวเดียวให้สัญญาณขาย</span>
+              <span class="item-desc">ไม่หวั่นไหวกับความผันผวนระยะสั้นหากปัจจัยพื้นฐานระยะยาวยังแข็งแกร่ง</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="pass-criteria-box">
+          <div class="criteria-label"><i data-lucide="check-circle-2" class="icon-sm"></i> ผ่านเมื่อ:</div>
+          <div class="criteria-text">ใช้ Technical เพื่อหาจุดเข้าที่ปลอดภัยขึ้น โดยไม่เอามาลบล้างข้อเท็จจริงทางพื้นฐาน</div>
+        </div>
+      </section>
+
+      <!-- SECTION 9: ก่อนกด BUY ถามตัวเองครั้งสุดท้าย -->
+      <section id="sec-9" class="checklist-card glass-panel final-checklist-card" data-section="9">
+        <div class="card-header">
+          <div class="section-index text-emerald">!</div>
+          <div class="section-title-wrap">
+            <h2 class="section-title text-gradient-emerald">ก่อนกด BUY ถามตัวเองครั้งสุดท้าย (Pre-Flight 10 Questions)</h2>
+            <p class="section-subtitle">เช็กความพร้อมขั้นเด็ดขาด หากยังมีข้อที่ลังเล... ชะลอการซื้อไว้ก่อน</p>
+          </div>
+          <div class="section-badge badge-emerald" id="badge-sec-9">0 / 10</div>
+        </div>
+
+        <div class="final-checklist-grid">
+          <label class="final-check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s9_1">
+            <span class="final-checkbox"><i data-lucide="check"></i></span>
+            <span class="final-text">รู้ว่าซื้ออะไร</span>
+          </label>
+
+          <label class="final-check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s9_2">
+            <span class="final-checkbox"><i data-lucide="check"></i></span>
+            <span class="final-text">รู้ว่ามันหาเงินยังไง</span>
+          </label>
+
+          <label class="final-check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s9_3">
+            <span class="final-checkbox"><i data-lucide="check"></i></span>
+            <span class="final-text">ดูงบแล้ว</span>
+          </label>
+
+          <label class="final-check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s9_4">
+            <span class="final-checkbox"><i data-lucide="check"></i></span>
+            <span class="final-text">ดู Valuation แล้ว</span>
+          </label>
+
+          <label class="final-check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s9_5">
+            <span class="final-checkbox"><i data-lucide="check"></i></span>
+            <span class="final-text">รู้ว่าความเสี่ยงคืออะไร</span>
+          </label>
+
+          <label class="final-check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s9_6">
+            <span class="final-checkbox"><i data-lucide="check"></i></span>
+            <span class="final-text">มีเหตุผลว่าทำไมถึงซื้อ</span>
+          </label>
+
+          <label class="final-check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s9_7">
+            <span class="final-checkbox"><i data-lucide="check"></i></span>
+            <span class="final-text">รู้ว่าอะไรจะทำให้ Thesis พัง</span>
+          </label>
+
+          <label class="final-check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s9_8">
+            <span class="final-checkbox"><i data-lucide="check"></i></span>
+            <span class="final-text">Position Size เหมาะสม</span>
+          </label>
+
+          <label class="final-check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s9_9">
+            <span class="final-checkbox"><i data-lucide="check"></i></span>
+            <span class="final-text">ไม่ได้ซื้อเพราะ FOMO</span>
+          </label>
+
+          <label class="final-check-item">
+            <input type="checkbox" class="task-checkbox" data-id="s9_10">
+            <span class="final-checkbox"><i data-lucide="check"></i></span>
+            <span class="final-text">ถ้าราคาลงพรุ่งนี้ ยังรู้ว่าตัวเองต้องทำอะไร</span>
+          </label>
+        </div>
+
+        <!-- Golden Rule Card -->
+        <div class="golden-rule-banner">
+          <div class="golden-rule-icon">
+            <i data-lucide="shield-alert"></i>
+          </div>
+          <div class="golden-rule-content">
+            <h3 class="golden-rule-title">ถ้ายังมีข้อสำคัญที่ตอบไม่ได้...</h3>
+            <p class="golden-rule-highlight">“ไม่ซื้อก็ไม่เสียอะไร ตลาดยังอยู่พรุ่งนี้”</p>
+            <p class="golden-rule-desc">หน้าที่ของเราไม่ใช่ซื้อหุ้นให้เยอะที่สุด แต่คือเลือกลงทุนเฉพาะสิ่งที่เราเข้าใจ และคิดว่าราคากับความเสี่ยงสมเหตุสมผล</p>
+          </div>
+        </div>
+
+        <!-- Action Decision Box -->
+        <div class="final-decision-action-bar">
+          <div class="decision-status" id="decisionStatusMessage">
+            <i data-lucide="clock" class="icon-sm"></i>
+            <span>กรุณาทำเช็กลิสต์ให้ครบถ้วนก่อนตัดสินใจขั้นสุดท้าย</span>
+          </div>
+          <button id="btnCopySummary" class="btn btn-primary btn-lg">
+            <i data-lucide="clipboard-check"></i> คัดลอกบทสรุปการตัดสินใจ
+          </button>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Sticky Bottom Progress Floating Bar on Mobile/Desktop -->
+  <div class="sticky-footer-bar glass-panel">
+    <div class="container footer-content">
+      <div class="footer-left">
+        <span class="ticker-badge" id="footerTickerBadge">ไม่ได้ระบุ Ticker</span>
+        <span class="footer-progress-label">ความคืบหน้า: <strong id="footerPercent">0%</strong> (<span id="footerCount">0</span> ข้อ)</span>
+      </div>
+      <div class="footer-right">
+        <button id="btnQuickTop" class="btn btn-xs btn-glass" title="กลับขึ้นบนสุด">
+          <i data-lucide="arrow-up"></i> บนสุด
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast hidden">
+    <i data-lucide="check-circle" class="toast-icon"></i>
+    <span id="toastMessage">บันทึกเรียบร้อยแล้ว</span>
+  </div>
+
+  <!-- App Logic JavaScript -->
+  <script src="js/app.js"></script>
+</body>
+</html>

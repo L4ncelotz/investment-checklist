@@ -1,0 +1,723 @@
+/**
+ * Pre-Investment Checklist Application Logic
+ * Supports Multi-asset Profiles, Autosave, Dynamic Asset Filtering, Markdown Export, PDF Print
+ */
+
+(function () {
+  'use strict';
+
+  // Constants
+  const STORAGE_KEY_PREFIX = 'investor_checklist_';
+  const PROFILES_LIST_KEY = 'investor_checklist_profiles';
+  const THEME_KEY = 'investor_checklist_theme';
+  const ACTIVE_PROFILE_KEY = 'investor_checklist_active_profile';
+
+  // App State
+  let currentProfileId = 'default';
+  let activeAssetType = 'all'; // 'all' | 'stock' | 'etf'
+  let isUpdatingUI = false;
+
+  // DOM Elements
+  const elements = {
+    // Theme
+    html: document.documentElement,
+    btnThemeToggle: document.getElementById('btnThemeToggle'),
+    
+    // Asset Meta
+    assetTicker: document.getElementById('assetTicker'),
+    targetAllocation: document.getElementById('targetAllocation'),
+    segmentBtns: document.querySelectorAll('.segment-btn'),
+    footerTickerBadge: document.getElementById('footerTickerBadge'),
+    
+    // Scores & Progress
+    scorePercent: document.getElementById('scorePercent'),
+    scoreProgressRing: document.getElementById('scoreProgressRing'),
+    scoreCountPassed: document.getElementById('scoreCountPassed'),
+    scoreStatusBadge: document.getElementById('scoreStatusBadge'),
+    scoreStatusText: document.getElementById('scoreStatusText'),
+    footerPercent: document.getElementById('footerPercent'),
+    footerCount: document.getElementById('footerCount'),
+    decisionStatusMessage: document.getElementById('decisionStatusMessage'),
+    
+    // Profiles
+    btnProfiles: document.getElementById('btnProfiles'),
+    profilesMenu: document.getElementById('profilesMenu'),
+    savedProfilesList: document.getElementById('savedProfilesList'),
+    activeProfileLabel: document.getElementById('activeProfileLabel'),
+    btnNewChecklist: document.getElementById('btnNewChecklist'),
+    
+    // Actions
+    btnExportMarkdown: document.getElementById('btnExportMarkdown'),
+    btnPrint: document.getElementById('btnPrint'),
+    btnReset: document.getElementById('btnReset'),
+    btnCopySummary: document.getElementById('btnCopySummary'),
+    btnQuickTop: document.getElementById('btnQuickTop'),
+    
+    // Toast
+    toast: document.getElementById('toast'),
+    toastMessage: document.getElementById('toastMessage'),
+
+    // Checkboxes & Inputs
+    taskCheckboxes: document.querySelectorAll('.task-checkbox'),
+    thesisInputs: document.querySelectorAll('.thesis-input')
+  };
+
+  // =========================================================================
+  // INITIALIZATION
+  // =========================================================================
+
+  function init() {
+    initTheme();
+    initProfiles();
+    loadProfile(currentProfileId);
+    bindEvents();
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  }
+
+  // =========================================================================
+  // THEME MANAGEMENT
+  // =========================================================================
+
+  function initTheme() {
+    const savedTheme = localStorage.getItem(THEME_KEY);
+    if (savedTheme === 'light') {
+      elements.html.classList.remove('dark');
+      elements.html.classList.add('light');
+    } else {
+      elements.html.classList.remove('light');
+      elements.html.classList.add('dark');
+    }
+  }
+
+  function toggleTheme() {
+    const isLight = elements.html.classList.toggle('light');
+    elements.html.classList.toggle('dark', !isLight);
+    localStorage.setItem(THEME_KEY, isLight ? 'light' : 'dark');
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  // =========================================================================
+  // PROFILE MANAGEMENT (Save / Switch Checklists for Different Tickers)
+  // =========================================================================
+
+  function getProfiles() {
+    try {
+      const data = localStorage.getItem(PROFILES_LIST_KEY);
+      return data ? JSON.parse(data) : [{ id: 'default', name: 'Checklist หลัก', ticker: '' }];
+    } catch (e) {
+      return [{ id: 'default', name: 'Checklist หลัก', ticker: '' }];
+    }
+  }
+
+  function saveProfilesList(profiles) {
+    localStorage.setItem(PROFILES_LIST_KEY, JSON.stringify(profiles));
+  }
+
+  function initProfiles() {
+    const lastActive = localStorage.getItem(ACTIVE_PROFILE_KEY);
+    const profiles = getProfiles();
+    if (lastActive && profiles.some(p => p.id === lastActive)) {
+      currentProfileId = lastActive;
+    } else {
+      currentProfileId = profiles[0].id;
+    }
+    renderProfilesMenu();
+  }
+
+  function renderProfilesMenu() {
+    const profiles = getProfiles();
+    elements.savedProfilesList.innerHTML = '';
+    
+    profiles.forEach(profile => {
+      const li = document.createElement('li');
+      li.className = `profile-item ${profile.id === currentProfileId ? 'active' : ''}`;
+      
+      const titleSpan = document.createElement('span');
+      titleSpan.textContent = profile.ticker ? `${profile.ticker} (${profile.name})` : profile.name;
+      titleSpan.addEventListener('click', () => {
+        switchProfile(profile.id);
+        elements.profilesMenu.classList.add('hidden');
+      });
+
+      li.appendChild(titleSpan);
+
+      if (profiles.length > 1 && profile.id !== 'default') {
+        const delBtn = document.createElement('button');
+        delBtn.className = 'profile-delete-btn';
+        delBtn.innerHTML = '&times;';
+        delBtn.title = 'ลบ Checklist นี้';
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteProfile(profile.id);
+        });
+        li.appendChild(delBtn);
+      }
+
+      elements.savedProfilesList.appendChild(li);
+    });
+
+    const activeProfile = profiles.find(p => p.id === currentProfileId) || profiles[0];
+    elements.activeProfileLabel.textContent = activeProfile.ticker || activeProfile.name;
+  }
+
+  function switchProfile(profileId) {
+    currentProfileId = profileId;
+    localStorage.setItem(ACTIVE_PROFILE_KEY, profileId);
+    loadProfile(profileId);
+    renderProfilesMenu();
+    showToast(`สลับไปยัง ${elements.activeProfileLabel.textContent}`);
+  }
+
+  function createNewProfile() {
+    const ticker = prompt('กรุณาระบุชื่อ Ticker หรือชื่อ Checklist เช่น TSLA, VOO, CPALL:') || '';
+    const newId = 'profile_' + Date.now();
+    const profiles = getProfiles();
+    const newProfile = {
+      id: newId,
+      name: ticker ? `Checklist ${ticker}` : `Checklist ใหม่ ${profiles.length + 1}`,
+      ticker: ticker.toUpperCase()
+    };
+    profiles.push(newProfile);
+    saveProfilesList(profiles);
+    
+    // Switch to new
+    switchProfile(newId);
+    if (ticker) {
+      elements.assetTicker.value = ticker.toUpperCase();
+      saveCurrentState();
+    }
+    elements.profilesMenu.classList.add('hidden');
+  }
+
+  function deleteProfile(profileId) {
+    if (!confirm('คุณแน่ใจว่าต้องการลบ Checklist นี้หรือไม่? ข้อมูลจะไม่สามารถกู้คืนได้')) {
+      return;
+    }
+    let profiles = getProfiles();
+    profiles = profiles.filter(p => p.id !== profileId);
+    saveProfilesList(profiles);
+    localStorage.removeItem(STORAGE_KEY_PREFIX + profileId);
+    switchProfile(profiles[0].id);
+  }
+
+  // =========================================================================
+  // STATE PERSISTENCE & LOADING
+  // =========================================================================
+
+  function saveCurrentState() {
+    if (isUpdatingUI) return;
+
+    const data = {
+      ticker: elements.assetTicker.value.trim(),
+      assetType: activeAssetType,
+      targetAllocation: elements.targetAllocation.value.trim(),
+      checkboxes: {},
+      thesisInputs: {},
+      updatedAt: new Date().toISOString()
+    };
+
+    elements.taskCheckboxes.forEach(cb => {
+      data.checkboxes[cb.dataset.id] = cb.checked;
+    });
+
+    elements.thesisInputs.forEach(input => {
+      data.thesisInputs[input.id] = input.value;
+    });
+
+    localStorage.setItem(STORAGE_KEY_PREFIX + currentProfileId, JSON.stringify(data));
+
+    // Update profile ticker metadata
+    const profiles = getProfiles();
+    const current = profiles.find(p => p.id === currentProfileId);
+    if (current && current.ticker !== data.ticker) {
+      current.ticker = data.ticker;
+      if (data.ticker) {
+        current.name = `Checklist ${data.ticker}`;
+      }
+      saveProfilesList(profiles);
+      renderProfilesMenu();
+    }
+
+    updateUI();
+  }
+
+  function loadProfile(profileId) {
+    isUpdatingUI = true;
+    const raw = localStorage.getItem(STORAGE_KEY_PREFIX + profileId);
+    let data = null;
+
+    if (raw) {
+      try {
+        data = JSON.parse(raw);
+      } catch (e) {
+        console.error('Error parsing stored checklist data', e);
+      }
+    }
+
+    // Reset Form
+    elements.assetTicker.value = data?.ticker || '';
+    elements.targetAllocation.value = data?.targetAllocation || '';
+    setAssetTypeFilter(data?.assetType || 'all', false);
+
+    // Populate Checkboxes
+    elements.taskCheckboxes.forEach(cb => {
+      const id = cb.dataset.id;
+      cb.checked = data?.checkboxes?.[id] === true;
+    });
+
+    // Populate Thesis Inputs
+    elements.thesisInputs.forEach(input => {
+      input.value = data?.thesisInputs?.[input.id] || '';
+    });
+
+    isUpdatingUI = false;
+    updateUI();
+  }
+
+  function resetChecklist() {
+    if (!confirm('ต้องการล้างข้อมูลใน Checklist นี้ทั้งหมดหรือไม่?')) return;
+    
+    isUpdatingUI = true;
+    elements.taskCheckboxes.forEach(cb => cb.checked = false);
+    elements.thesisInputs.forEach(input => input.value = '');
+    elements.targetAllocation.value = '';
+    isUpdatingUI = false;
+
+    saveCurrentState();
+    showToast('ล้างข้อมูลเช็กลิสต์เรียบร้อยแล้ว');
+  }
+
+  // =========================================================================
+  // ASSET TYPE FILTERING ('all' | 'stock' | 'etf')
+  // =========================================================================
+
+  function setAssetTypeFilter(type, shouldSave = true) {
+    activeAssetType = type;
+    
+    // Update button styling
+    elements.segmentBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.type === type);
+    });
+
+    // Filter Section / Items visibility
+    const filterItems = document.querySelectorAll('[data-filter-item]');
+    filterItems.forEach(el => {
+      const filterType = el.dataset.filterItem;
+      if (type === 'all' || filterType === type) {
+        el.style.display = '';
+      } else {
+        el.style.display = 'none';
+      }
+    });
+
+    // Also adjust nav pills
+    const navPillStock = document.querySelector('.nav-pill[data-filter="stock"]');
+    if (navPillStock) {
+      navPillStock.style.display = (type === 'etf') ? 'none' : '';
+    }
+
+    if (shouldSave) {
+      saveCurrentState();
+    } else {
+      updateUI();
+    }
+  }
+
+  // =========================================================================
+  // PROGRESS & SCORE CALCULATIONS
+  // =========================================================================
+
+  function isElementVisible(el) {
+    return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+  }
+
+  function updateUI() {
+    const ticker = elements.assetTicker.value.trim().toUpperCase() || 'ไม่ได้ระบุ Ticker';
+    elements.footerTickerBadge.textContent = ticker;
+
+    // Filter only currently visible checkboxes
+    const visibleCheckboxes = Array.from(elements.taskCheckboxes).filter(cb => {
+      const card = cb.closest('.checklist-card');
+      const subContainer = cb.closest('[data-filter-item]');
+      if (subContainer && subContainer.style.display === 'none') return false;
+      if (card && card.style.display === 'none') return false;
+      return true;
+    });
+
+    const totalVisible = visibleCheckboxes.length;
+    const checkedVisible = visibleCheckboxes.filter(cb => cb.checked).length;
+    const percent = totalVisible > 0 ? Math.round((checkedVisible / totalVisible) * 100) : 0;
+
+    // Update Percentage and Stat Texts
+    elements.scorePercent.textContent = `${percent}%`;
+    elements.scoreCountPassed.textContent = `${checkedVisible} / ${totalVisible}`;
+    elements.footerPercent.textContent = `${percent}%`;
+    elements.footerCount.textContent = `${checkedVisible} / ${totalVisible}`;
+
+    // Update SVG Progress Ring
+    // Ring circumference: 2 * Math.PI * 70 ≈ 439.82297
+    const circumference = 2 * Math.PI * 70;
+    const offset = circumference - (percent / 100) * circumference;
+    elements.scoreProgressRing.style.strokeDashoffset = offset;
+
+    // Ring Color based on percentage
+    if (percent === 100) {
+      elements.scoreProgressRing.style.stroke = 'var(--emerald-400)';
+    } else if (percent >= 70) {
+      elements.scoreProgressRing.style.stroke = 'var(--emerald-500)';
+    } else if (percent >= 40) {
+      elements.scoreProgressRing.style.stroke = 'var(--amber-500)';
+    } else {
+      elements.scoreProgressRing.style.stroke = 'var(--rose-500)';
+    }
+
+    // Status Badge & Decision Message
+    if (percent === 100) {
+      elements.scoreStatusBadge.className = 'score-status-badge passed';
+      elements.scoreStatusBadge.innerHTML = '<i data-lucide="check-check" class="icon-xs"></i><span>พร้อมลงทุนตามแผน</span>';
+      elements.decisionStatusMessage.innerHTML = '<i data-lucide="check-circle" class="icon-sm text-emerald"></i><span class="text-emerald"><strong>ผ่านการประเมิน 100%</strong> — มีแผนและ Thesis รัดกุม พร้อมพิจารณาจังหวะเข้าซื้อ</span>';
+    } else if (percent >= 80) {
+      elements.scoreStatusBadge.className = 'score-status-badge passed';
+      elements.scoreStatusBadge.innerHTML = '<i data-lucide="check" class="icon-xs"></i><span>ความพร้อมสูงมาก</span>';
+      elements.decisionStatusMessage.innerHTML = '<i data-lucide="info" class="icon-sm text-cyan"></i><span>ความพร้อมสูงเกือบครบถ้วน เหลือเพียงบางจุดที่ควรทบทวนให้มั่นใจ</span>';
+    } else if (percent >= 50) {
+      elements.scoreStatusBadge.className = 'score-status-badge';
+      elements.scoreStatusBadge.innerHTML = '<i data-lucide="alert-triangle" class="icon-xs"></i><span>ต้องทำการบ้านเพิ่ม</span>';
+      elements.decisionStatusMessage.innerHTML = '<i data-lucide="alert-triangle" class="icon-sm text-amber"></i><span>ยังตอบคำถามสำคัญไม่ครบ อย่าเพิ่งรีบกดซื้อ ตลาดยังอยู่พรุ่งนี้</span>';
+    } else {
+      elements.scoreStatusBadge.className = 'score-status-badge';
+      elements.scoreStatusBadge.innerHTML = '<i data-lucide="alert-circle" class="icon-xs"></i><span>ยังไม่ผ่านการประเมิน</span>';
+      elements.decisionStatusMessage.innerHTML = '<i data-lucide="x-circle" class="icon-sm text-danger"></i><span class="text-danger">ยังไม่แนะนำให้ซื้อ — ข้อมูลและความเข้าใจยังไม่เพียงพอต่อการรับความเสี่ยง</span>';
+    }
+
+    // Update Individual Section Badges
+    updateSectionBadges();
+
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  }
+
+  function updateSectionBadges() {
+    // Section 1
+    updateBadgeForSection(1, 'badge-sec-1', 'sec-1');
+
+    // Section 2: Overall, Stock sub, ETF sub
+    updateBadgeForSection(2, 'badge-sec-2', 'sec-2');
+    updateSubBadge('badge-sec-2-stock', '[data-id^="s2_s"]');
+    updateSubBadge('badge-sec-2-etf', '[data-id^="s2_e"]');
+
+    // Section 3
+    updateBadgeForSection(3, 'badge-sec-3', 'sec-3');
+
+    // Section 4
+    updateBadgeForSection(4, 'badge-sec-4', 'sec-4');
+
+    // Section 5
+    updateBadgeForSection(5, 'badge-sec-5', 'sec-5');
+
+    // Section 6
+    updateBadgeForSection(6, 'badge-sec-6', 'sec-6');
+
+    // Section 7
+    updateBadgeForSection(7, 'badge-sec-7', 'sec-7');
+
+    // Section 8
+    updateBadgeForSection(8, 'badge-sec-8', 'sec-8');
+
+    // Section 9
+    updateBadgeForSection(9, 'badge-sec-9', 'sec-9');
+  }
+
+  function updateBadgeForSection(sectionNum, badgeId, sectionElId) {
+    const badge = document.getElementById(badgeId);
+    const section = document.getElementById(sectionElId);
+    if (!badge || !section) return;
+
+    const checkboxes = Array.from(section.querySelectorAll('.task-checkbox')).filter(cb => {
+      const sub = cb.closest('[data-filter-item]');
+      return !sub || sub.style.display !== 'none';
+    });
+
+    const total = checkboxes.length;
+    const checked = checkboxes.filter(cb => cb.checked).length;
+
+    badge.textContent = `${checked} / ${total}`;
+    const isDone = total > 0 && checked === total;
+    badge.classList.toggle('completed', isDone);
+    section.classList.toggle('section-completed', isDone);
+  }
+
+  function updateSubBadge(badgeId, selector) {
+    const badge = document.getElementById(badgeId);
+    if (!badge) return;
+    const checkboxes = Array.from(document.querySelectorAll(selector));
+    const total = checkboxes.length;
+    const checked = checkboxes.filter(cb => cb.checked).length;
+    badge.textContent = `${checked} / ${total}`;
+    badge.classList.toggle('completed', total > 0 && checked === total);
+  }
+
+  // =========================================================================
+  // EXPORT AS MARKDOWN & CLIPBOARD
+  // =========================================================================
+
+  function generateMarkdownReport() {
+    const ticker = elements.assetTicker.value.trim().toUpperCase() || 'N/A';
+    const alloc = elements.targetAllocation.value.trim() ? `${elements.targetAllocation.value.trim()}%` : 'N/A';
+    const dateStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+    
+    let md = `# Pre-Investment Final Checklist — ก่อนลงทุนจริง\n\n`;
+    md += `**สินทรัพย์ (Ticker):** \`${ticker}\` | **ประเภท:** ${activeAssetType.toUpperCase()} | **Target Allocation:** ${alloc} | **วันที่ประเมิน:** ${dateStr}\n\n`;
+    md += `**ผลการประเมินความพร้อม:** ${elements.scorePercent.textContent} (${elements.scoreCountPassed.textContent} ข้อ)\n\n`;
+    md += `---\n\n`;
+
+    // Helper to extract checkbox status
+    const getCheck = (id) => {
+      const cb = document.querySelector(`[data-id="${id}"]`);
+      return cb && cb.checked ? '[x]' : '[ ]';
+    };
+
+    // Helper to get text input
+    const getText = (id) => {
+      const inp = document.getElementById(id);
+      return inp ? inp.value.trim() : '';
+    };
+
+    md += `## 1. ตัวเราเอง\n\n`;
+    md += `* ${getCheck('s1_1')} เงินก้อนนี้เป็นเงินที่ยังไม่จำเป็นต้องใช้ในเร็ว ๆ นี้\n`;
+    md += `* ${getCheck('s1_2')} มีเงินสำรองฉุกเฉินแยกจากเงินลงทุนแล้ว\n`;
+    md += `* ${getCheck('s1_3')} รู้ว่าตัวเองรับการขาดทุนหรือความผันผวนได้ประมาณไหน\n`;
+    md += `* ${getCheck('s1_4')} รู้ว่าลงทุนระยะสั้น กลาง หรือยาว\n`;
+    md += `* ${getCheck('s1_5')} ไม่ได้ซื้อเพราะ FOMO หรือเห็นคนอื่นกำไร\n\n`;
+    md += `**ผ่านเมื่อ:** ถ้าพอร์ตลงแรงแล้วยังสามารถทำตามแผนเดิมได้ ไม่จำเป็นต้องรีบขายเพราะกลัว\n\n---\n\n`;
+
+    md += `## 2. เรารู้ไหมว่ากำลังซื้ออะไร\n\n`;
+    if (activeAssetType !== 'etf') {
+      md += `### ถ้าเป็นหุ้นรายตัว\n\n`;
+      md += `* ${getCheck('s2_s1')} อธิบายได้ว่าบริษัททำธุรกิจอะไร\n`;
+      md += `* ${getCheck('s2_s2')} รู้ว่าบริษัทหาเงินจากไหน\n`;
+      md += `* ${getCheck('s2_s3')} รู้ว่าลูกค้าหลักคือใคร\n`;
+      md += `* ${getCheck('s2_s4')} รู้ว่าอะไรทำให้รายได้โต\n`;
+      md += `* ${getCheck('s2_s5')} รู้ว่าคู่แข่งหลักคือใคร\n`;
+      md += `* ${getCheck('s2_s6')} พออธิบายได้ว่าบริษัทมี Moat หรือข้อได้เปรียบอะไร\n`;
+      md += `* ${getCheck('s2_s7')} รู้ว่าความเสี่ยงหลักของธุรกิจคืออะไร\n\n`;
+    }
+
+    if (activeAssetType !== 'stock') {
+      md += `### ถ้าเป็น ETF\n\n`;
+      md += `* ${getCheck('s2_e1')} รู้ว่า ETF นี้ลงทุนตาม Index หรือ Strategy อะไร\n`;
+      md += `* ${getCheck('s2_e2')} เปิดดู Holdings แล้ว\n`;
+      md += `* ${getCheck('s2_e3')} รู้ว่า Top Holdings มีอะไรบ้าง\n`;
+      md += `* ${getCheck('s2_e4')} ดู Sector Allocation แล้ว\n`;
+      md += `* ${getCheck('s2_e5')} รู้ว่า ETF กระจายจริงหรือกระจุกอยู่ใน Sector/หุ้นไม่กี่ตัว\n`;
+      md += `* ${getCheck('s2_e6')} ดู Expense Ratio แล้ว\n`;
+      md += `* ${getCheck('s2_e7')} ถ้ามี ETF หลายตัว เช็กแล้วว่ามี Holding Overlap กันมากแค่ไหน\n\n`;
+    }
+    md += `---\n\n`;
+
+    if (activeAssetType !== 'etf') {
+      md += `## 3. ธุรกิจแข็งแรงไหม\n\n`;
+      md += `* ${getCheck('s3_1')} **Revenue** — รายได้โตไหม และโตต่อเนื่องหรือไม่\n`;
+      md += `* ${getCheck('s3_2')} **Gross Margin** — Margin ทรงตัวหรือดีขึ้นไหม\n`;
+      md += `* ${getCheck('s3_3')} **Operating Margin** — บริษัทควบคุมค่าใช้จ่ายและ Scale ได้ไหม\n`;
+      md += `* ${getCheck('s3_4')} **Net Income** — บริษัทมีกำไรจริงไหม\n`;
+      md += `* ${getCheck('s3_5')} **Free Cash Flow** — ธุรกิจสร้างเงินสดจริงหรือเปล่า\n`;
+      md += `* ${getCheck('s3_6')} **Debt** — หนี้อยู่ในระดับที่รับได้ไหม\n`;
+      md += `* ${getCheck('s3_7')} **ROE / ROIC** — ใช้เงินทุนได้มีประสิทธิภาพไหม\n`;
+      md += `* ${getCheck('s3_8')} **Shares Outstanding** — มี Dilution ผู้ถือหุ้นหนักหรือไม่\n\n---\n\n`;
+    }
+
+    md += `## 4. หุ้นดี แล้วราคาดีไหม\n\n`;
+    md += `* ${getCheck('s4_1')} ดู Valuation แล้ว\n`;
+    md += `* ${getCheck('s4_2')} ใช้ Ratio ที่เหมาะกับธุรกิจ ไม่ได้ดูแค่ P/E อย่างเดียว\n`;
+    md += `* ${getCheck('s4_3')} เปรียบเทียบกับอดีตของบริษัท\n`;
+    md += `* ${getCheck('s4_4')} เปรียบเทียบกับบริษัทใกล้เคียง\n`;
+    md += `* ${getCheck('s4_5')} เอา Growth ของบริษัทมาคิดประกอบด้วย\n`;
+    md += `* ${getCheck('s4_6')} คิดถึงความเสี่ยงของธุรกิจประกอบกับราคาที่จ่าย\n\n---\n\n`;
+
+    md += `## 5. มี Investment Thesis หรือยัง\n\n`;
+    md += `**ทำไมถึงซื้อหุ้น/ETF ตัวนี้?**\n`;
+    md += `* 1. ${getText('thesis_reason_1') || '-'}\n`;
+    md += `* 2. ${getText('thesis_reason_2') || '-'}\n`;
+    md += `* 3. ${getText('thesis_reason_3') || '-'}\n\n`;
+
+    md += `**อะไรจะทำให้บริษัทโต?**\n`;
+    md += `* Growth Driver 1: ${getText('thesis_growth_1') || '-'}\n`;
+    md += `* Growth Driver 2: ${getText('thesis_growth_2') || '-'}\n\n`;
+
+    md += `**ความเสี่ยงคืออะไร?**\n`;
+    md += `* Risk 1: ${getText('thesis_risk_1') || '-'}\n`;
+    md += `* Risk 2: ${getText('thesis_risk_2') || '-'}\n`;
+    md += `* Risk 3: ${getText('thesis_risk_3') || '-'}\n\n`;
+
+    md += `**อะไรเกิดขึ้นแล้วแปลว่าเราวิเคราะห์ผิด? (Thesis Break)**\n`;
+    md += `* Thesis Break 1: ${getText('thesis_break_1') || '-'}\n`;
+    md += `* Thesis Break 2: ${getText('thesis_break_2') || '-'}\n\n---\n\n`;
+
+    md += `## 6. Portfolio รับมันไหวไหม\n\n`;
+    md += `* ${getCheck('s6_1')} รู้ว่าจะให้หุ้นตัวนี้กิน Portfolio กี่ %\n`;
+    md += `* ${getCheck('s6_2')} ถ้าหุ้นตัวนี้ลง 50% Portfolio โดยรวมยังรับได้\n`;
+    md += `* ${getCheck('s6_3')} ไม่ได้ Concentrate โดยไม่รู้ตัว\n`;
+    md += `* ${getCheck('s6_4')} เช็กแล้วว่าหุ้น/ETF ที่ถือไม่ได้กระจุกอยู่ใน Sector เดียวกันมากเกินไป\n`;
+    md += `* ${getCheck('s6_5')} มีแผนว่าจะลงทุนครั้งเดียวหรือทยอยลงทุน\n\n---\n\n`;
+
+    md += `## 7. มีแผนหลังจากซื้อหรือยัง\n\n`;
+    md += `* ${getCheck('s7_1')} ถ้าราคาลงแต่ Fundamental ไม่เปลี่ยน จะทำอะไร\n`;
+    md += `* ${getCheck('s7_2')} ถ้าราคาขึ้นจน Valuation แพงมาก จะทำอะไร\n`;
+    md += `* ${getCheck('s7_3')} ถ้า Fundamental แย่ลง จะทำอะไร\n`;
+    md += `* ${getCheck('s7_4')} ถ้า Investment Thesis พัง จะทำอะไร\n`;
+    md += `* ${getCheck('s7_5')} รู้ว่าจะกลับมา Review บริษัทเมื่อไร เช่น ทุก Earnings\n\n---\n\n`;
+
+    md += `## 8. Technical — ใช้เป็นเครื่องมือเสริม\n\n`;
+    md += `* ${getCheck('s8_1')} รู้ว่า Trend ตอนนี้เป็นอย่างไร\n`;
+    md += `* ${getCheck('s8_2')} ดู EMA / Supply / Demand หรือระบบที่ตัวเองใช้\n`;
+    md += `* ${getCheck('s8_3')} ไม่ซื้อหุ้นแย่เพียงเพราะกราฟดูดี\n`;
+    md += `* ${getCheck('s8_4')} ไม่ขายบริษัทดีเพียงเพราะ Indicator ตัวเดียวให้สัญญาณขาย\n\n---\n\n`;
+
+    md += `## ก่อนกด BUY ถามตัวเองครั้งสุดท้าย\n\n`;
+    md += `* ${getCheck('s9_1')} รู้ว่าซื้ออะไร\n`;
+    md += `* ${getCheck('s9_2')} รู้ว่ามันหาเงินยังไง\n`;
+    md += `* ${getCheck('s9_3')} ดูงบแล้ว\n`;
+    md += `* ${getCheck('s9_4')} ดู Valuation แล้ว\n`;
+    md += `* ${getCheck('s9_5')} รู้ว่าความเสี่ยงคืออะไร\n`;
+    md += `* ${getCheck('s9_6')} มีเหตุผลว่าทำไมถึงซื้อ\n`;
+    md += `* ${getCheck('s9_7')} รู้ว่าอะไรจะทำให้ Thesis พัง\n`;
+    md += `* ${getCheck('s9_8')} Position Size เหมาะสม\n`;
+    md += `* ${getCheck('s9_9')} ไม่ได้ซื้อเพราะ FOMO\n`;
+    md += `* ${getCheck('s9_10')} ถ้าราคาลงพรุ่งนี้ ยังรู้ว่าตัวเองต้องทำอะไร\n\n`;
+
+    md += `> **“ไม่ซื้อก็ไม่เสียอะไร ตลาดยังอยู่พรุ่งนี้”**\n`;
+    md += `> หน้าที่ของเราไม่ใช่ซื้อหุ้นให้เยอะที่สุด แต่คือเลือกลงทุนเฉพาะสิ่งที่เราเข้าใจและคิดว่าราคากับความเสี่ยงสมเหตุสมผล\n`;
+
+    return md;
+  }
+
+  function copyToClipboard(text, successMsg) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(successMsg);
+      }).catch(err => {
+        fallbackCopy(text, successMsg);
+      });
+    } else {
+      fallbackCopy(text, successMsg);
+    }
+  }
+
+  function fallbackCopy(text, successMsg) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      document.execCommand('copy');
+      showToast(successMsg);
+    } catch (err) {
+      showToast('ไม่สามารถคัดลอกได้ กรุณาลองใหม่อีกครั้ง');
+    }
+    document.body.removeChild(textarea);
+  }
+
+  function showToast(msg) {
+    elements.toastMessage.textContent = msg;
+    elements.toast.classList.remove('hidden');
+    clearTimeout(elements.toastTimeout);
+    elements.toastTimeout = setTimeout(() => {
+      elements.toast.classList.add('hidden');
+    }, 2800);
+  }
+
+  // =========================================================================
+  // EVENT BINDINGS
+  // =========================================================================
+
+  function bindEvents() {
+    // Theme toggle
+    elements.btnThemeToggle.addEventListener('click', toggleTheme);
+
+    // Profiles dropdown
+    elements.btnProfiles.addEventListener('click', (e) => {
+      e.stopPropagation();
+      elements.profilesMenu.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!elements.profilesMenu.contains(e.target) && e.target !== elements.btnProfiles) {
+        elements.profilesMenu.classList.add('hidden');
+      }
+    });
+
+    elements.btnNewChecklist.addEventListener('click', createNewProfile);
+
+    // Segmented Asset Type buttons
+    elements.segmentBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        setAssetTypeFilter(btn.dataset.type, true);
+      });
+    });
+
+    // Inputs & Checkboxes change / autosave
+    elements.assetTicker.addEventListener('input', () => {
+      saveCurrentState();
+    });
+
+    elements.targetAllocation.addEventListener('input', () => {
+      saveCurrentState();
+    });
+
+    elements.taskCheckboxes.forEach(cb => {
+      cb.addEventListener('change', () => {
+        saveCurrentState();
+      });
+    });
+
+    elements.thesisInputs.forEach(input => {
+      input.addEventListener('input', () => {
+        // Auto-check parent check-item if input has value
+        const block = input.closest('.thesis-block');
+        if (block) {
+          const parentCb = block.querySelector('.task-checkbox');
+          if (parentCb) {
+            const anyFilled = Array.from(block.querySelectorAll('.thesis-input')).some(i => i.value.trim() !== '');
+            parentCb.checked = anyFilled;
+          }
+        }
+        saveCurrentState();
+      });
+    });
+
+    // Actions
+    elements.btnExportMarkdown.addEventListener('click', () => {
+      const md = generateMarkdownReport();
+      copyToClipboard(md, 'คัดลอกรายงาน Markdown เรียบร้อยแล้ว!');
+    });
+
+    elements.btnCopySummary.addEventListener('click', () => {
+      const md = generateMarkdownReport();
+      copyToClipboard(md, 'คัดลอกบทสรุปเรียบร้อยแล้ว!');
+    });
+
+    elements.btnPrint.addEventListener('click', () => {
+      window.print();
+    });
+
+    elements.btnReset.addEventListener('click', resetChecklist);
+
+    elements.btnQuickTop.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  // Run on DOM Ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+})();
