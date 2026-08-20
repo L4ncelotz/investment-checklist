@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th" class="dark">
+<html lang="th">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,17 +18,9 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   
   <!-- Link to External Stylesheet -->
-  <link rel="stylesheet" href="./css/style.css?v=3.0">
+  <link rel="stylesheet" href="./css/style.css?v=5.6">
 </head>
 <body class="theme-wrapper">
-
-  <!-- Ambient Glow Gradients -->
-  <div class="glow-backdrop" aria-hidden="true">
-    <div class="ambient-orb orb-1"></div>
-    <div class="ambient-orb orb-2"></div>
-    <div class="ambient-orb orb-3"></div>
-    <div class="mesh-grid-pattern"></div>
-  </div>
 
   <!-- Top App Navigation -->
   <header class="app-navbar">
@@ -86,10 +78,7 @@
             <span class="btn-label">พิมพ์ / PDF</span>
           </button>
 
-          <button id="btnThemeToggle" class="nav-btn nav-btn-icon" aria-label="สลับธีม สว่าง/มืด" title="สลับโหมด Dark / Light">
-            <i data-lucide="sun" class="icon-sun"></i>
-            <i data-lucide="moon" class="icon-moon"></i>
-          </button>
+
 
           <button id="btnReset" class="nav-btn nav-btn-icon btn-reset-hover" aria-label="ล้างข้อมูลทั้งหมด" title="ล้างเช็กลิสต์นี้">
             <i data-lucide="rotate-ccw"></i>
@@ -99,6 +88,43 @@
       </div>
     </div>
   </header>
+
+  <!-- Sticky Quick Navigation Jump Bar -->
+  <nav class="sticky-nav-strip" id="sectionsNavStrip">
+    <div class="nav-strip-container">
+      <div class="nav-strip-label" title="หัวข้อประเมิน">
+        <i data-lucide="compass" class="icon-xs"></i>
+        <span>หัวข้อ:</span>
+      </div>
+      <div class="nav-strip-scroll">
+        <a href="#sec-1" class="strip-pill" data-sec="1">
+          <span class="pill-num">01</span> ตัวเราเอง
+        </a>
+        <a href="#sec-2" class="strip-pill" data-sec="2">
+          <span class="pill-num">02</span> สิ่งที่ซื้อ
+        </a>
+        <a href="#sec-3" class="strip-pill" data-sec="3" data-filter="stock">
+          <span class="pill-num">03</span> ธุรกิจ
+        </a>
+        <a href="#sec-4" class="strip-pill" data-sec="4">
+          <span class="pill-num">04</span> Valuation
+        </a>
+        <a href="#sec-5" class="strip-pill" data-sec="5">
+          <span class="pill-num">05</span> Thesis
+        </a>
+        <a href="#sec-6" class="strip-pill" data-sec="6">
+          <span class="pill-num">06</span> Portfolio
+        </a>
+        <a href="#sec-7" class="strip-pill" data-sec="7">
+          <span class="pill-num">07</span> แผนหลังซื้อ
+        </a>
+        <a href="#sec-9" class="strip-pill strip-pill-final" data-sec="9">
+          <i data-lucide="sparkles" class="icon-xs"></i>
+          <span>Final Decision</span>
+        </a>
+      </div>
+    </div>
+  </nav>
 
   <!-- Main Workspace -->
   <main class="main-layout">
@@ -211,49 +237,17 @@
                 <i data-lucide="alert-circle" class="icon-xs"></i>
                 <span id="scoreStatusText">ยังไม่ผ่านการประเมิน</span>
               </div>
+
+              <div id="criticalRiskSummary" class="critical-risk-line hidden">
+                <i data-lucide="alert-octagon" class="icon-xs text-rose"></i>
+                <span id="criticalRiskText">ติดข้อวิกฤต 0 ข้อ</span>
+              </div>
             </div>
 
           </div>
         </div>
 
       </div>
-
-      <!-- Sticky Quick Navigation Jump Bar -->
-      <nav class="sticky-nav-strip">
-        <div class="nav-strip-label">
-          <i data-lucide="compass" class="icon-xs"></i>
-          <span>หัวข้อประเมิน:</span>
-        </div>
-        <div class="nav-strip-scroll">
-          <a href="#sec-1" class="strip-pill" data-sec="1">
-            <span class="pill-num">01</span> ตัวเราเอง
-          </a>
-          <a href="#sec-2" class="strip-pill" data-sec="2">
-            <span class="pill-num">02</span> กำลังซื้ออะไร
-          </a>
-          <a href="#sec-3" class="strip-pill" data-sec="3" data-filter="stock">
-            <span class="pill-num">03</span> ธุรกิจแข็งแรงไหม
-          </a>
-          <a href="#sec-4" class="strip-pill" data-sec="4">
-            <span class="pill-num">04</span> หุ้นดี ราคาดีไหม
-          </a>
-          <a href="#sec-5" class="strip-pill" data-sec="5">
-            <span class="pill-num">05</span> Thesis Builder
-          </a>
-          <a href="#sec-6" class="strip-pill" data-sec="6">
-            <span class="pill-num">06</span> Portfolio Risk
-          </a>
-          <a href="#sec-7" class="strip-pill" data-sec="7">
-            <span class="pill-num">07</span> แผนหลังซื้อ
-          </a>
-          <a href="#sec-8" class="strip-pill" data-sec="8">
-            <span class="pill-num">08</span> Technical
-          </a>
-          <a href="#sec-9" class="strip-pill strip-pill-final" data-sec="9">
-            <i data-lucide="sparkles" class="icon-xs"></i> Final Decision
-          </a>
-        </div>
-      </nav>
     </section>
 
     <!-- Checklist Sections Stream -->
@@ -279,19 +273,25 @@
 
         <div class="checklist-items-stack">
           <label class="modern-check-row">
-            <input type="checkbox" class="task-checkbox" data-id="s1_1">
+            <input type="checkbox" class="task-checkbox" data-id="s1_1" data-critical="true">
             <div class="check-box-indicator"><i data-lucide="check"></i></div>
             <div class="check-text-content">
-              <div class="check-primary-text">เงินก้อนนี้เป็นเงินที่ยังไม่จำเป็นต้องใช้ในเร็ว ๆ นี้</div>
+              <div class="check-primary-text">
+                เงินก้อนนี้เป็นเงินที่ยังไม่จำเป็นต้องใช้ในเร็ว ๆ นี้
+                <span class="badge-critical">CRITICAL</span>
+              </div>
               <div class="check-secondary-text">เป็นเงินเย็นที่ไม่จำเป็นต้องถอนมาใช้ฉุกเฉินในระยะสั้นถึงปานกลาง</div>
             </div>
           </label>
 
           <label class="modern-check-row">
-            <input type="checkbox" class="task-checkbox" data-id="s1_2">
+            <input type="checkbox" class="task-checkbox" data-id="s1_2" data-critical="true">
             <div class="check-box-indicator"><i data-lucide="check"></i></div>
             <div class="check-text-content">
-              <div class="check-primary-text">มีเงินสำรองฉุกเฉินแยกจากเงินลงทุนแล้ว</div>
+              <div class="check-primary-text">
+                มีเงินสำรองฉุกเฉินแยกจากเงินลงทุนแล้ว
+                <span class="badge-critical">CRITICAL</span>
+              </div>
               <div class="check-secondary-text">มีเงินสำรอง 6-12 เดือนเก็บไว้ในสินทรัพย์สภาพคล่องสูง ปลอดภัย ไม่ปนกับพอร์ตหุ้น</div>
             </div>
           </label>
@@ -315,10 +315,13 @@
           </label>
 
           <label class="modern-check-row">
-            <input type="checkbox" class="task-checkbox" data-id="s1_5">
+            <input type="checkbox" class="task-checkbox" data-id="s1_5" data-critical="true">
             <div class="check-box-indicator"><i data-lucide="check"></i></div>
             <div class="check-text-content">
-              <div class="check-primary-text">ไม่ได้ซื้อเพราะ FOMO หรือเห็นคนอื่นกำไร</div>
+              <div class="check-primary-text">
+                ไม่ได้ซื้อเพราะ FOMO หรือเห็นคนอื่นกำไร
+                <span class="badge-critical">CRITICAL</span>
+              </div>
               <div class="check-secondary-text">ตัดสินใจจากข้อมูลและการวิเคราะห์ของตัวเอง ไม่ใช่วิ่งตามกระแสโซเชียลหรือกลัวตกรถ</div>
             </div>
           </label>
@@ -360,19 +363,25 @@
 
           <div class="checklist-items-stack">
             <label class="modern-check-row">
-              <input type="checkbox" class="task-checkbox" data-id="s2_s1">
+              <input type="checkbox" class="task-checkbox" data-id="s2_s1" data-critical="true">
               <div class="check-box-indicator"><i data-lucide="check"></i></div>
               <div class="check-text-content">
-                <div class="check-primary-text">อธิบายได้ว่าบริษัททำธุรกิจอะไร</div>
+                <div class="check-primary-text">
+                  อธิบายได้ว่าบริษัททำธุรกิจอะไร
+                  <span class="badge-critical">CRITICAL</span>
+                </div>
                 <div class="check-secondary-text">เข้าใจผลิตภัณฑ์ บริการ และคุณค่าที่บริษัทส่งมอบให้ลูกค้าในตลาด</div>
               </div>
             </label>
 
             <label class="modern-check-row">
-              <input type="checkbox" class="task-checkbox" data-id="s2_s2">
+              <input type="checkbox" class="task-checkbox" data-id="s2_s2" data-critical="true">
               <div class="check-box-indicator"><i data-lucide="check"></i></div>
               <div class="check-text-content">
-                <div class="check-primary-text">รู้ว่าบริษัทหาเงินจากไหน (Revenue Model)</div>
+                <div class="check-primary-text">
+                  รู้ว่าบริษัทหาเงินจากไหน (Revenue Model)
+                  <span class="badge-critical">CRITICAL</span>
+                </div>
                 <div class="check-secondary-text">เข้าใจแหล่งที่มาของรายได้แต่ละส่วนธุรกิจ และสัดส่วนยอดขายหลัก</div>
               </div>
             </label>
@@ -405,19 +414,25 @@
             </label>
 
             <label class="modern-check-row">
-              <input type="checkbox" class="task-checkbox" data-id="s2_s6">
+              <input type="checkbox" class="task-checkbox" data-id="s2_s6" data-critical="true">
               <div class="check-box-indicator"><i data-lucide="check"></i></div>
               <div class="check-text-content">
-                <div class="check-primary-text">พออธิบายได้ว่าบริษัทมี Moat หรือข้อได้เปรียบอะไร</div>
+                <div class="check-primary-text">
+                  พออธิบายได้ว่าบริษัทมี Moat หรือข้อได้เปรียบอะไร
+                  <span class="badge-critical">CRITICAL</span>
+                </div>
                 <div class="check-secondary-text">เช่น Network Effect, Brand Equity, High Switching Cost, ต้นทุนต่ำกว่าคู่แข่ง, สิทธิบัตร</div>
               </div>
             </label>
 
             <label class="modern-check-row">
-              <input type="checkbox" class="task-checkbox" data-id="s2_s7">
+              <input type="checkbox" class="task-checkbox" data-id="s2_s7" data-critical="true">
               <div class="check-box-indicator"><i data-lucide="check"></i></div>
               <div class="check-text-content">
-                <div class="check-primary-text">รู้ว่าความเสี่ยงหลักของธุรกิจคืออะไร (Key Risks)</div>
+                <div class="check-primary-text">
+                  รู้ว่าความเสี่ยงหลักของธุรกิจคืออะไร (Key Risks)
+                  <span class="badge-critical">CRITICAL</span>
+                </div>
                 <div class="check-secondary-text">การเปลี่ยนแปลงทางเทคโนโลยี กฎระเบียบ ดอกเบี้ย นโยบายรัฐ หรือพฤติกรรมผู้บริโภค</div>
               </div>
             </label>
@@ -445,10 +460,13 @@
 
           <div class="checklist-items-stack">
             <label class="modern-check-row">
-              <input type="checkbox" class="task-checkbox" data-id="s2_e1">
+              <input type="checkbox" class="task-checkbox" data-id="s2_e1" data-critical="true">
               <div class="check-box-indicator"><i data-lucide="check"></i></div>
               <div class="check-text-content">
-                <div class="check-primary-text">รู้ว่า ETF นี้ลงทุนตาม Index หรือ Strategy อะไร</div>
+                <div class="check-primary-text">
+                  รู้ว่า ETF นี้ลงทุนตาม Index หรือ Strategy อะไร
+                  <span class="badge-critical">CRITICAL</span>
+                </div>
                 <div class="check-secondary-text">เช่น S&P 500, Nasdaq 100, Equal Weight, Factor Tilt, หรือ Active Strategy</div>
               </div>
             </label>
@@ -665,10 +683,13 @@
 
         <div class="checklist-items-stack">
           <label class="modern-check-row">
-            <input type="checkbox" class="task-checkbox" data-id="s4_1">
+            <input type="checkbox" class="task-checkbox" data-id="s4_1" data-critical="true">
             <div class="check-box-indicator"><i data-lucide="check"></i></div>
             <div class="check-text-content">
-              <div class="check-primary-text">ดู Valuation แล้ว</div>
+              <div class="check-primary-text">
+                ดู Valuation แล้ว
+                <span class="badge-critical">CRITICAL</span>
+              </div>
               <div class="check-secondary-text">วิเคราะห์ระดับความถูก-แพงของราคาปัจจุบันเทียบกับมูลค่าที่แท้จริง</div>
             </div>
           </label>
@@ -900,19 +921,25 @@
 
         <div class="checklist-items-stack">
           <label class="modern-check-row">
-            <input type="checkbox" class="task-checkbox" data-id="s6_1">
+            <input type="checkbox" class="task-checkbox" data-id="s6_1" data-critical="true">
             <div class="check-box-indicator"><i data-lucide="check"></i></div>
             <div class="check-text-content">
-              <div class="check-primary-text">รู้ว่าจะให้หุ้นตัวนี้กิน Portfolio กี่ %</div>
+              <div class="check-primary-text">
+                รู้ว่าจะให้หุ้นตัวนี้กิน Portfolio กี่ %
+                <span class="badge-critical">CRITICAL</span>
+              </div>
               <div class="check-secondary-text">กำหนดเพดาน Max Allocation ชัดเจน เช่น ไม่เกิน 5% หรือ 10% ของพอร์ตโดยรวม</div>
             </div>
           </label>
 
           <label class="modern-check-row">
-            <input type="checkbox" class="task-checkbox" data-id="s6_2">
+            <input type="checkbox" class="task-checkbox" data-id="s6_2" data-critical="true">
             <div class="check-box-indicator"><i data-lucide="check"></i></div>
             <div class="check-text-content">
-              <div class="check-primary-text">ถ้าหุ้นตัวนี้ลง -50% Portfolio โดยรวมยังรับได้</div>
+              <div class="check-primary-text">
+                ถ้าหุ้นตัวนี้ลง -50% Portfolio โดยรวมยังรับได้
+                <span class="badge-critical">CRITICAL</span>
+              </div>
               <div class="check-secondary-text">คำนวณ Drawdown ผลกระทบสูงสุดแล้วว่าไม่ทำให้เป้าหมายทางการเงินพังทลาย</div>
             </div>
           </label>
@@ -1026,94 +1053,6 @@
         </div>
       </section>
 
-      <!-- SECTION 8: Technical — ใช้เป็นเครื่องมือเสริม -->
-      <section id="sec-8" class="section-card" data-section="8">
-        <div class="section-card-header">
-          <div class="section-header-left">
-            <div class="section-badge-number">08</div>
-            <div>
-              <h2 class="section-title">8. Technical — ใช้เป็นเครื่องมือเสริม (Timing & Risk Management)</h2>
-              <p class="section-description">ใช้กราฟและเครื่องมือทางเทคนิคช่วยดูจังหวะเข้าซื้อและบริหารความเสี่ยง ไม่ใช่เหตุผลหลักในการถือครอง</p>
-            </div>
-          </div>
-          <div class="section-header-right">
-            <button type="button" class="btn-check-all" data-target-section="sec-8">
-              <i data-lucide="check-square" class="icon-xs"></i> เลือกทั้งหมด
-            </button>
-            <div class="section-progress-pill" id="badge-sec-8">0 / 4</div>
-          </div>
-        </div>
-
-        <!-- Pillar Guidelines Grid -->
-        <div class="pillars-grid mb-4">
-          <div class="pillar-card border-emerald">
-            <div class="pillar-title text-emerald">
-              <i data-lucide="pie-chart" class="icon-xs"></i> Fundamental
-            </div>
-            <div class="pillar-content">ใช้เลือกว่า <strong>จะลงทุนในอะไร</strong></div>
-          </div>
-
-          <div class="pillar-card border-cyan">
-            <div class="pillar-title text-cyan">
-              <i data-lucide="calculator" class="icon-xs"></i> Valuation
-            </div>
-            <div class="pillar-content">ใช้ดูว่า <strong>ราคาสมเหตุสมผลไหม</strong></div>
-          </div>
-
-          <div class="pillar-card border-amber">
-            <div class="pillar-title text-amber">
-              <i data-lucide="activity" class="icon-xs"></i> Technical
-            </div>
-            <div class="pillar-content">ใช้ช่วยดู <strong>จังหวะ & ความเสี่ยง</strong></div>
-          </div>
-        </div>
-
-        <div class="checklist-items-stack">
-          <label class="modern-check-row">
-            <input type="checkbox" class="task-checkbox" data-id="s8_1">
-            <div class="check-box-indicator"><i data-lucide="check"></i></div>
-            <div class="check-text-content">
-              <div class="check-primary-text">รู้ว่า Trend ตอนนี้เป็นอย่างไร</div>
-              <div class="check-secondary-text">Uptrend, Downtrend หรือ Sideway ใน Timeframe หลัก (Daily / Weekly)</div>
-            </div>
-          </label>
-
-          <label class="modern-check-row">
-            <input type="checkbox" class="task-checkbox" data-id="s8_2">
-            <div class="check-box-indicator"><i data-lucide="check"></i></div>
-            <div class="check-text-content">
-              <div class="check-primary-text">ดู EMA / Supply / Demand หรือระบบที่ตัวเองใช้</div>
-              <div class="check-secondary-text">สังเกตแนวรับ แนวต้าน จุดกลับตัว และสัญญาณ Volume สนับสนุน</div>
-            </div>
-          </label>
-
-          <label class="modern-check-row">
-            <input type="checkbox" class="task-checkbox" data-id="s8_3">
-            <div class="check-box-indicator"><i data-lucide="check"></i></div>
-            <div class="check-text-content">
-              <div class="check-primary-text">ไม่ซื้อหุ้นแย่เพียงเพราะกราฟดูดี</div>
-              <div class="check-secondary-text">กราฟสวยแค่ไหนแต่ถ้าธุรกิจกลวงและไม่มีอนาคตก็ไม่แตะ</div>
-            </div>
-          </label>
-
-          <label class="modern-check-row">
-            <input type="checkbox" class="task-checkbox" data-id="s8_4">
-            <div class="check-box-indicator"><i data-lucide="check"></i></div>
-            <div class="check-text-content">
-              <div class="check-primary-text">ไม่ขายบริษัทดีเพียงเพราะ Indicator ตัวเดียวให้สัญญาณขาย</div>
-              <div class="check-secondary-text">ไม่หวั่นไหวกับความผันผวนระยะสั้นหากปัจจัยพื้นฐานระยะยาวยังแข็งแกร่ง</div>
-            </div>
-          </label>
-        </div>
-
-        <div class="pass-criterion-banner">
-          <div class="criterion-tag"><i data-lucide="shield-check" class="icon-xs"></i> ผ่านเมื่อ:</div>
-          <div class="criterion-body">
-            ใช้ Technical เพื่อหาจุดเข้าที่ปลอดภัยขึ้น โดยไม่เอามาลบล้างข้อเท็จจริงทางพื้นฐาน
-          </div>
-        </div>
-      </section>
-
       <!-- SECTION 9: ก่อนกด BUY ถามตัวเองครั้งสุดท้าย -->
       <section id="sec-9" class="section-card final-stage-card" data-section="9">
         <div class="section-card-header">
@@ -1136,9 +1075,9 @@
         <div class="pre-flight-grid">
           
           <label class="flight-question-card">
-            <input type="checkbox" class="task-checkbox" data-id="s9_1">
+            <input type="checkbox" class="task-checkbox" data-id="s9_1" data-critical="true">
             <span class="flight-check-mark"><i data-lucide="check"></i></span>
-            <div class="flight-question-text">1. รู้ว่าซื้ออะไร</div>
+            <div class="flight-question-text">1. รู้ว่าซื้ออะไร <span class="badge-critical">CRITICAL</span></div>
           </label>
 
           <label class="flight-question-card">
@@ -1160,9 +1099,9 @@
           </label>
 
           <label class="flight-question-card">
-            <input type="checkbox" class="task-checkbox" data-id="s9_5">
+            <input type="checkbox" class="task-checkbox" data-id="s9_5" data-critical="true">
             <span class="flight-check-mark"><i data-lucide="check"></i></span>
-            <div class="flight-question-text">5. รู้ว่าความเสี่ยงคืออะไร</div>
+            <div class="flight-question-text">5. รู้ว่าความเสี่ยงคืออะไร <span class="badge-critical">CRITICAL</span></div>
           </label>
 
           <label class="flight-question-card">
@@ -1184,9 +1123,9 @@
           </label>
 
           <label class="flight-question-card">
-            <input type="checkbox" class="task-checkbox" data-id="s9_9">
+            <input type="checkbox" class="task-checkbox" data-id="s9_9" data-critical="true">
             <span class="flight-check-mark"><i data-lucide="check"></i></span>
-            <div class="flight-question-text">9. ไม่ได้ซื้อเพราะ FOMO</div>
+            <div class="flight-question-text">9. ไม่ได้ซื้อเพราะ FOMO <span class="badge-critical">CRITICAL</span></div>
           </label>
 
           <label class="flight-question-card">
@@ -1256,6 +1195,6 @@
   </div>
 
   <!-- Application Logic -->
-  <script src="./js/app.js?v=3.0"></script>
+  <script src="./js/app.js?v=5.6"></script>
 </body>
 </html>

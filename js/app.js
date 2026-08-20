@@ -11,7 +11,7 @@
   // Storage Keys
   const STORAGE_KEY_PREFIX = 'investor_checklist_';
   const PROFILES_LIST_KEY = 'investor_checklist_profiles';
-  const THEME_KEY = 'investor_checklist_theme';
+
   const ACTIVE_PROFILE_KEY = 'investor_checklist_active_profile';
 
   // App State
@@ -23,7 +23,7 @@
   const elements = {
     // Theme
     html: document.documentElement,
-    btnThemeToggle: document.getElementById('btnThemeToggle'),
+
     
     // Asset Meta
     assetTicker: document.getElementById('assetTicker'),
@@ -73,7 +73,7 @@
   // =========================================================================
 
   function init() {
-    initTheme();
+
     initProfiles();
     loadProfile(currentProfileId);
     bindEvents();
@@ -83,27 +83,6 @@
     }
   }
 
-  // =========================================================================
-  // 2. THEME CONTROLLER (Dark / Light)
-  // =========================================================================
-
-  function initTheme() {
-    const savedTheme = localStorage.getItem(THEME_KEY);
-    if (savedTheme === 'light') {
-      elements.html.classList.remove('dark');
-      elements.html.classList.add('light');
-    } else {
-      elements.html.classList.remove('light');
-      elements.html.classList.add('dark');
-    }
-  }
-
-  function toggleTheme() {
-    const isLight = elements.html.classList.toggle('light');
-    elements.html.classList.toggle('dark', !isLight);
-    localStorage.setItem(THEME_KEY, isLight ? 'light' : 'dark');
-    if (window.lucide) window.lucide.createIcons();
-  }
 
   // =========================================================================
   // 3. PROFILE / MULTI-TICKER CONTROLLER
@@ -143,12 +122,15 @@
       
       const titleSpan = document.createElement('span');
       titleSpan.textContent = profile.ticker ? `${profile.ticker} (${profile.name})` : profile.name;
-      titleSpan.addEventListener('click', () => {
-        switchProfile(profile.id);
-        elements.profilesMenu.classList.add('hidden');
-      });
 
       li.appendChild(titleSpan);
+
+      li.addEventListener('click', (e) => {
+        if (!e.target.closest('.profile-delete-btn')) {
+          switchProfile(profile.id);
+          elements.profilesMenu.classList.add('hidden');
+        }
+      });
 
       if (profiles.length > 1 && profile.id !== 'default') {
         const delBtn = document.createElement('button');
@@ -362,8 +344,28 @@
     const offset = circumference - (percent / 100) * circumference;
     elements.scoreProgressRing.style.strokeDashoffset = offset;
 
+    // Critical Deal-Breakers calculation
+    const visibleCritical = visibleCheckboxes.filter(cb => cb.dataset.critical === 'true');
+    const totalCritical = visibleCritical.length;
+    const checkedCritical = visibleCritical.filter(cb => cb.checked).length;
+    const uncheckedCritical = totalCritical - checkedCritical;
+
+    // Update Critical Alert widget in Gauge
+    const criticalRiskEl = document.getElementById('criticalRiskSummary');
+    const criticalRiskText = document.getElementById('criticalRiskText');
+    if (criticalRiskEl && criticalRiskText) {
+      if (uncheckedCritical > 0) {
+        criticalRiskEl.classList.remove('hidden');
+        criticalRiskText.textContent = `ติดข้อวิกฤต ${uncheckedCritical} ข้อ`;
+      } else {
+        criticalRiskEl.classList.add('hidden');
+      }
+    }
+
     // Dynamic Color Shift
-    if (percent === 100) {
+    if (uncheckedCritical > 0) {
+      elements.scoreProgressRing.style.stroke = 'var(--rose-500)';
+    } else if (percent === 100) {
       elements.scoreProgressRing.style.stroke = 'var(--emerald-400)';
     } else if (percent >= 70) {
       elements.scoreProgressRing.style.stroke = 'var(--emerald-500)';
@@ -374,18 +376,22 @@
     }
 
     // Verdict Badge & Decision Message
-    if (percent === 100) {
+    if (uncheckedCritical > 0) {
+      elements.scoreStatusBadge.className = 'verdict-banner danger';
+      elements.scoreStatusBadge.innerHTML = `<i data-lucide="alert-octagon" class="icon-xs"></i><span>🚨 ติดข้อวิกฤต ${uncheckedCritical} ข้อ (ห้ามซื้อ)</span>`;
+      elements.decisionStatusMessage.innerHTML = `<i data-lucide="alert-octagon" class="icon-sm text-rose"></i><span class="text-rose"><strong>ยังติดข้อวิกฤต (Deal-Breaker) ${uncheckedCritical} ข้อ</strong> — ต้องตอบข้อเหล่านี้ให้ผ่านก่อนกดซื้อ</span>`;
+    } else if (percent === 100) {
       elements.scoreStatusBadge.className = 'verdict-banner passed';
       elements.scoreStatusBadge.innerHTML = '<i data-lucide="check-check" class="icon-xs"></i><span>พร้อมลงทุนตามแผน 100%</span>';
-      elements.decisionStatusMessage.innerHTML = '<i data-lucide="check-circle" class="icon-sm text-emerald"></i><span class="text-emerald"><strong>ผ่านการประเมิน 100%</strong> — มีแผนและ Thesis รัดกุม พร้อมพิจารณาจังหวะเข้าซื้อ</span>';
+      elements.decisionStatusMessage.innerHTML = '<i data-lucide="check-circle" class="icon-sm text-emerald"></i><span class="text-emerald"><strong>ผ่านการประเมิน 100%</strong> — ปราศจาก Red Flag และมีแผนรัดกุม</span>';
     } else if (percent >= 80) {
       elements.scoreStatusBadge.className = 'verdict-banner passed';
       elements.scoreStatusBadge.innerHTML = '<i data-lucide="check" class="icon-xs"></i><span>ความพร้อมสูงมาก</span>';
-      elements.decisionStatusMessage.innerHTML = '<i data-lucide="info" class="icon-sm text-cyan"></i><span>ความพร้อมสูงเกือบครบถ้วน เหลือเพียงบางจุดที่ควรทบทวนให้มั่นใจ</span>';
+      elements.decisionStatusMessage.innerHTML = '<i data-lucide="info" class="icon-sm text-cyan"></i><span>ความพร้อมสูงเกือบครบถ้วน ผ่านข้อสำคัญหมดแล้ว เหลือเพียงบางจุดปลีกย่อย</span>';
     } else if (percent >= 50) {
       elements.scoreStatusBadge.className = 'verdict-banner';
       elements.scoreStatusBadge.innerHTML = '<i data-lucide="alert-triangle" class="icon-xs"></i><span>ต้องทำการบ้านเพิ่ม</span>';
-      elements.decisionStatusMessage.innerHTML = '<i data-lucide="alert-triangle" class="icon-sm text-amber"></i><span>ยังตอบคำถามสำคัญไม่ครบ อย่าเพิ่งรีบกดซื้อ ตลาดยังอยู่พรุ่งนี้</span>';
+      elements.decisionStatusMessage.innerHTML = '<i data-lucide="alert-triangle" class="icon-sm text-amber"></i><span>ยังตอบคำถามไม่ครบ อย่าเพิ่งรีบกดซื้อ ตลาดยังอยู่พรุ่งนี้</span>';
     } else {
       elements.scoreStatusBadge.className = 'verdict-banner';
       elements.scoreStatusBadge.innerHTML = '<i data-lucide="alert-circle" class="icon-xs"></i><span>ยังไม่ผ่านการประเมิน</span>';
@@ -410,7 +416,6 @@
     updateBadgeForSection(5, 'badge-sec-5', 'sec-5');
     updateBadgeForSection(6, 'badge-sec-6', 'sec-6');
     updateBadgeForSection(7, 'badge-sec-7', 'sec-7');
-    updateBadgeForSection(8, 'badge-sec-8', 'sec-8');
     updateBadgeForSection(9, 'badge-sec-9', 'sec-9');
   }
 
@@ -469,9 +474,12 @@
 
   function initScrollSpy() {
     const sections = document.querySelectorAll('.section-card');
+    const navStripScroll = document.querySelector('.nav-strip-scroll');
+    let lastActiveSecId = '';
+
     window.addEventListener('scroll', () => {
       let currentSecId = '';
-      const scrollPos = window.scrollY + 200;
+      const scrollPos = window.scrollY + 140;
 
       sections.forEach(sec => {
         if (sec.offsetTop <= scrollPos) {
@@ -479,10 +487,17 @@
         }
       });
 
-      elements.stripPills.forEach(pill => {
-        const href = pill.getAttribute('href').replace('#', '');
-        pill.classList.toggle('active', href === currentSecId);
-      });
+      if (currentSecId && currentSecId !== lastActiveSecId) {
+        lastActiveSecId = currentSecId;
+        elements.stripPills.forEach(pill => {
+          const href = pill.getAttribute('href').replace('#', '');
+          const isActive = href === currentSecId;
+          pill.classList.toggle('active', isActive);
+          if (isActive && navStripScroll) {
+            pill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          }
+        });
+      }
     }, { passive: true });
   }
 
@@ -502,7 +517,8 @@
 
     const getCheck = (id) => {
       const cb = document.querySelector(`[data-id="${id}"]`);
-      return cb && cb.checked ? '[x]' : '[ ]';
+      const isCrit = cb && cb.dataset.critical === 'true' ? ' `[CRITICAL]`' : '';
+      return (cb && cb.checked ? '[x]' : '[ ]') + isCrit;
     };
 
     const getText = (id) => {
@@ -595,12 +611,6 @@
     md += `* ${getCheck('s7_4')} ถ้า Investment Thesis พัง จะทำอะไร\n`;
     md += `* ${getCheck('s7_5')} รู้ว่าจะกลับมา Review บริษัทเมื่อไร เช่น ทุก Earnings\n\n---\n\n`;
 
-    md += `## 8. Technical — ใช้เป็นเครื่องมือเสริม\n\n`;
-    md += `* ${getCheck('s8_1')} รู้ว่า Trend ตอนนี้เป็นอย่างไร\n`;
-    md += `* ${getCheck('s8_2')} ดู EMA / Supply / Demand หรือระบบที่ตัวเองใช้\n`;
-    md += `* ${getCheck('s8_3')} ไม่ซื้อหุ้นแย่เพียงเพราะกราฟดูดี\n`;
-    md += `* ${getCheck('s8_4')} ไม่ขายบริษัทดีเพียงเพราะ Indicator ตัวเดียวให้สัญญาณขาย\n\n---\n\n`;
-
     md += `## ก่อนกด BUY ถามตัวเองครั้งสุดท้าย\n\n`;
     md += `* ${getCheck('s9_1')} รู้ว่าซื้ออะไร\n`;
     md += `* ${getCheck('s9_2')} รู้ว่ามันหาเงินยังไง\n`;
@@ -659,8 +669,7 @@
   // =========================================================================
 
   function bindEvents() {
-    // Theme toggle
-    elements.btnThemeToggle.addEventListener('click', toggleTheme);
+
 
     // Profile Dropdown
     elements.btnProfiles.addEventListener('click', (e) => {
@@ -669,10 +678,27 @@
     });
 
     document.addEventListener('click', (e) => {
-      if (!elements.profilesMenu.contains(e.target) && e.target !== elements.btnProfiles) {
+      if (!elements.profilesMenu.contains(e.target) && !elements.btnProfiles.contains(e.target)) {
         elements.profilesMenu.classList.add('hidden');
       }
     });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        elements.profilesMenu.classList.add('hidden');
+      }
+    });
+
+    // Mouse wheel horizontal scroll on sub-nav
+    const navStripScroll = document.querySelector('.nav-strip-scroll');
+    if (navStripScroll) {
+      navStripScroll.addEventListener('wheel', (e) => {
+        if (e.deltaY !== 0 && navStripScroll.scrollWidth > navStripScroll.clientWidth) {
+          e.preventDefault();
+          navStripScroll.scrollLeft += e.deltaY;
+        }
+      }, { passive: false });
+    }
 
     elements.btnNewChecklist.addEventListener('click', createNewProfile);
 
