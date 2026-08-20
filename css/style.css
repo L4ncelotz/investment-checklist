@@ -1,6 +1,6 @@
 /* ==========================================================================
    INVESTMENT CHECKLIST — ULTRA PREMIUM DESIGN SYSTEM & TYPOGRAPHY
-   Crafted with Obsidian Fintech Aesthetic & Thai/English Type Polish
+   Crafted with Obsidian Fintech Aesthetic & Thai/English Typography Polish
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -746,7 +746,7 @@ html.light .icon-moon { display: none; }
   stroke: var(--emerald-500);
   stroke-width: 12;
   stroke-linecap: round;
-  stroke-dasharray: 477.52; /* 2 * PI * 76 */
+  stroke-dasharray: 477.52;
   stroke-dashoffset: 477.52;
   transition: stroke-dashoffset 0.6s var(--ease-spring), stroke 0.3s ease;
 }
